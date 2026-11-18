@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Remnant Word Hub • KJV/NKJV Parallel Reader, BLB Concordance & 365-Day Apostolic Study Tracker</title>
+  <meta name="description" content="Apostolic Bible Reading & Exegesis Hub with 365-Day Tile Tracker & Completion Forecaster, KJV/NKJV Parallel Reader, Blue Letter Bible Strong's Concordance, Study Logbook, and Topic Pre-Studies after Apostle Arome Osayi, Apostle Tolu Agboola & Apostle Gideon Adoma." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Top Apostolic Navigation Bar -->
+  <header class="top-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-emblem">Ω</div>
+        <div>
+          <div class="brand-title">REMNANT WORD HUB</div>
+          <div class="brand-subtitle">KJV • NKJV • BLB Lexicon • Apostolic Exegesis & 365 Tracker</div>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Primary Workspace Navigation">
+        <button class="nav-btn active" data-tab="tracker" onclick="window.switchTab('tracker')">
+          <span>📅 365-Day Tile Study & Finish Tracker</span>
+          <span id="nav-tracker-badge" class="nav-badge">0.0%</span>
+        </button>
+        <button class="nav-btn" data-tab="reader" onclick="window.switchTab('reader')">
+          <span>📖 KJV / NKJV + BLB Concordance</span>
+        </button>
+        <button class="nav-btn" data-tab="topics" onclick="window.switchTab('topics')">
+          <span>🔥 Apostolic Pre-Studies</span>
+          <span class="nav-badge">6 Pillars</span>
+        </button>
+        <button class="nav-btn" data-tab="journal" onclick="window.switchTab('journal')">
+          <span>✍️ Study Notes & Logbook</span>
+          <span id="nav-journal-badge" class="nav-badge">2</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn-outline" onclick="window.toggleTheme()" title="Switch between Royal Dark and Sacred Parchment Theme">
+          🌗 Theme
+        </button>
+        <button class="btn-outline" onclick="window.exportAllStudyData()" title="Export 365 Progress & Study Logbook JSON Backup">
+          ⬇ Backup JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- Real-Time Completion Date & Pace Indicator Banner -->
+    <div id="live-completion-ticker" class="completion-ticker-bar"></div>
+  </header>
+
+  <!-- Main Application Workspace -->
+  <main class="app-container">
+
+    <!-- ===================================================================
+         VIEW 1: 365-DAY YEARLY TILE BIBLE STUDY & FINISH DATE FORECASTER
+         =================================================================== -->
+    <section id="view-tracker" class="view-section active">
+      <div class="tracker-hero-grid">
+        <!-- Left: Dynamic Finish Date Forecaster & Progress Engine -->
+        <div id="forecast-hero-panel" class="card-panel"></div>
+
+        <!-- Right: Active Day Reading Tile & Instant Finish Indicator -->
+        <div id="today-assignment-panel" class="card-panel today-reading-card"></div>
+      </div>
+
+      <!-- 365-Day Interactive Tile Matrix -->
+      <div class="card-panel">
+        <div class="tile-matrix-controls">
+          <div>
+            <div class="section-eyebrow">Interactive 365-Day Tile Calendar (1,189 Canonical Chapters Starting Today)</div>
+            <h3 class="section-title">Yearly Tile Bible Study Roadmap</h3>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <input
+              type="text"
+              class="text-input"
+              placeholder="Search Day #, Book (e.g. Romans, Heb)..."
+              oninput="window.setTileSearch(this.value)"
+              style="min-width:230px;"
+            />
+            <div class="filter-pills">
+              <button class="filter-pill tile-filter-btn active" data-filter="all" onclick="window.setTileFilter('all')">All 365 Tiles</button>
+              <button class="filter-pill tile-filter-btn" data-filter="remaining" onclick="window.setTileFilter('remaining')">Remaining</button>
+              <button class="filter-pill tile-filter-btn" data-filter="completed" onclick="window.setTileFilter('completed')">Completed ✓</button>
+              <button class="filter-pill tile-filter-btn" data-filter="ot" onclick="window.setTileFilter('ot')">Old Testament</button>
+              <button class="filter-pill tile-filter-btn" data-filter="nt" onclick="window.setTileFilter('nt')">New Testament</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="year-tiles-grid" class="year-tiles-grid"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 2: KJV & NKJV PARALLEL READER + BLUE LETTER BIBLE CONCORDANCE
+         =================================================================== -->
+    <section id="view-reader" class="view-section">
+      <div class="reader-workspace">
+        <!-- Left: Scripture Reader & Parallel KJV / NKJV Comparison -->
+        <div class="card-panel">
+          <div class="reader-toolbar">
+            <div class="selector-group">
+              <select id="reader-book-select" class="select-input" onchange="window.onReaderBookChange(this.value)" aria-label="Select Bible Book"></select>
+              <select id="reader-chapter-select" class="select-input" onchange="window.onReaderChapterChange(this.value)" aria-label="Select Chapter"></select>
+            </div>
+
+            <!-- Quick Jump to High-Density Apostolic Key Chapters -->
+            <div class="selector-group">
+              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;">Key Apostolic Chapters:</span>
+              <select class="select-input" onchange="if(this.value) window.jumpToCuratedChapter(this.value)">
+                <option value="">⚡ Jump to Tagged Chapter...</option>
+                <option value="Genesis_1">Genesis 1 (Elohim, Ruwach & Dominion)</option>
+                <option value="Leviticus_17">Leviticus 17 (Nephesh in the Blood / Kaphar)</option>
+                <option value="John_1">John 1 (Eternal Logos, Zoe & Exousia)</option>
+                <option value="Romans_3">Romans 3 (Hilasterion / Mercy Seat Blood)</option>
+                <option value="Romans_8">Romans 8 (Law of Zoe & Mature Huioi Sons)</option>
+                <option value="Ephesians_1">Ephesians 1 (Redemption Blood & Dunamis)</option>
+                <option value="Hebrews_4">Hebrews 4 (Surgical Logos: Soul vs Spirit)</option>
+                <option value="Hebrews_9">Hebrews 9 (Heavenly Tabernacle & Conscience)</option>
+                <option value="Hebrews_12">Hebrews 12 (Chastening of Sons & Speaking Blood)</option>
+                <option value="Revelation_12">Revelation 12 (Overcoming the Accuser by the Blood)</option>
+              </select>
+            </div>
+
+            <div class="version-toggle-group">
+              <button class="version-btn active" data-mode="parallel" onclick="window.setReaderVersionMode('parallel')">KJV + NKJV Parallel</button>
+              <button class="version-btn" data-mode="kjv" onclick="window.setReaderVersionMode('kjv')">KJV Only</button>
+              <button class="version-btn" data-mode="nkjv" onclick="window.setReaderVersionMode('nkjv')">NKJV Only</button>
+            </div>
+          </div>
+
+          <div id="reader-chapter-banner" class="apostolic-chapter-banner"></div>
+
+          <!-- Study Bible Historical Context & Interactive Chapter Map -->
+          <div id="reader-study-context-map" class="study-bible-context-grid"></div>
+
+          <div id="reader-verses-container" class="verses-container"></div>
+        </div>
+
+        <!-- Right: Blue Letter Bible + Apostolic Lexicon & Concordance Inspector -->
+        <aside class="card-panel concordance-inspector">
+          <div class="section-eyebrow">Blue Letter Bible + Apostolic Lexicon</div>
+          <h3 class="section-title" style="margin-bottom:0.65rem;">Strong's Hebrew & Greek Concordance</h3>
+
+          <div style="margin-bottom:0.85rem;">
+            <input
+              type="text"
+              class="text-input"
+              style="width:100%;"
+              placeholder="Search Strong's (e.g. G3056, Logos, Blood, Zoe, Huios, H1818)..."
+              oninput="window.searchStrongsConcordance(this.value)"
+            />
+            <div id="concordance-search-results"></div>
+          </div>
+
+          <!-- Quick Lexicon Pills -->
+          <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.95rem;">
+            <span class="strongs-token" onclick="window.inspectStrongs('G3056')">G3056 Logos</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G4487')">G4487 Rhema</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G2222')">G2222 Zoe</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G4991')">G4991 Soteria</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G129')">G129 Haima (Blood)</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('H1818')">H1818 Dam (Blood)</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('H3722')">H3722 Kaphar</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G2435')">G2435 Hilasterion</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G5207')">G5207 Huios (Son)</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G4416')">G4416 Prototokos</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G1411')">G1411 Dunamis</span>
+            <span class="strongs-token" onclick="window.inspectStrongs('G1849')">G1849 Exousia</span>
+          </div>
+
+          <div id="blb-lexicon-content"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 3: APOSTOLIC TOPIC PRE-STUDIES & CORE CONCEPTS OF CHRIST
+         =================================================================== -->
+    <section id="view-topics" class="view-section">
+      <div class="topics-layout">
+        <!-- Left Topic Selector -->
+        <aside class="card-panel">
+          <div class="section-eyebrow">Apostolic Curriculum & Doctrinal Pillars</div>
+          <h3 class="section-title" style="margin-bottom:0.35rem;">Topic Pre-Studies</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.95rem;">
+            Structured in the systematic scriptural breakdown methodology of <strong>Apostle Arome Osayi</strong>, <strong>Apostle Tolu Agboola</strong>, and <strong>Apostle Gideon Adoma</strong>.
+          </p>
+          <div id="apostolic-topics-nav" class="topic-list-card"></div>
+        </aside>
+
+        <!-- Right 6-Pillar Apostolic Breakdown View -->
+        <div id="apostolic-topic-detail" class="card-panel"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 4: STUDY NOTES & EXEGESIS LOGBOOK (BEYOND BLUE LETTER BIBLE)
+         =================================================================== -->
+    <section id="view-journal" class="view-section">
+      <div class="journal-grid">
+        <!-- Left: Structured Apostolic Exegesis Note Builder -->
+        <div class="card-panel">
+          <div class="section-eyebrow">Beyond Blue Letter Bible • Exegesis Builder</div>
+          <h3 class="section-title" style="margin-bottom:0.35rem;">Log New Apostolic Study Entry</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">
+            Break down Scripture line-upon-line using First Mention, Strong's Hebrew/Greek roots, New Creation Substance, and Rhema Legislation.
+          </p>
+
+          <form id="study-log-form" onsubmit="window.saveNewStudyLog(event)">
+            <div class="form-group">
+              <label class="form-label" for="log-title-input">Study Title / Core Thesis</label>
+              <input
+                type="text"
+                id="log-title-input"
+                class="text-input"
+                style="width:100%;"
+                placeholder="e.g. The Sevenfold Jurisdiction of the Blood of Christ"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="log-passage-input">Governing Scripture Passages (KJV / NKJV)</label>
+              <input
+                type="text"
+                id="log-passage-input"
+                class="text-input"
+                style="width:100%;"
+                placeholder="e.g. Leviticus 17:11; Hebrews 9:14; Hebrews 12:24"
+                required
+              />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
+              <div class="form-group">
+                <label class="form-label" for="log-topic-select">Doctrinal Stream</label>
+                <select id="log-topic-select" class="select-input" style="width:100%;">
+                  <option value="Core Concepts of Christ & What He Brought">Core Concepts of Christ</option>
+                  <option value="Salvation (Spirit, Soul & Body)">Salvation (Soteria Architecture)</option>
+                  <option value="The Power & Jurisdiction of the Blood">The Power of the Blood</option>
+                  <option value="Economy of Sonship (Teknon to Huios)">Economy of Sonship (Huios)</option>
+                  <option value="Logos, Rhema & Spiritual Legislation">Logos & Rhema Legislation</option>
+                  <option value="Priesthood, Altars & Kingdom Dominion">Priesthood & Altars</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="log-minister-select">Exegesis Framework</label>
+                <select id="log-minister-select" class="select-input" style="width:100%;">
+                  <option value="Apostle Arome Osayi Pattern">Apostle Arome Osayi Pattern</option>
+                  <option value="Apostle Tolu Agboola Pattern">Apostle Tolu Agboola Pattern</option>
+                  <option value="Apostle Gideon Adoma Pattern">Apostle Gideon Adoma Pattern</option>
+                  <option value="Combined Apostolic Synthesis">Combined Apostolic Synthesis</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="log-lexicon-input">1. Law of First Mention, OT Shadow & Hebrew/Greek Lexicon</label>
+              <textarea
+                id="log-lexicon-input"
+                class="textarea-input"
+                placeholder="Record the first mention in Scripture, Strong's Hebrew/Greek root words (e.g. Dam H1818, Haima G129, Zoe G2222), and Old Testament typology..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="log-christ-input">2. New Testament Substance & What Christ Brought (Legal vs. Vital)</label>
+              <textarea
+                id="log-christ-input"
+                class="textarea-input"
+                placeholder="How is this fulfilled in Christ? Distinguish the legal reality finished at the Cross from the vital experiential formation in the believer..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="log-rhema-input">3. Personal Rhema Legislation & Priestly Altar Response</label>
+              <textarea
+                id="log-rhema-input"
+                class="textarea-input"
+                placeholder="Write out your spoken prayer decree, judicial legislation, and practical alignment..."
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn-gold" style="width:100%;justify-content:center;padding:0.7rem;">
+              💾 Save Apostolic Study Entry to Logbook
+            </button>
+          </form>
+        </div>
+
+        <!-- Right: Saved Study Logbook Archive -->
+        <div>
+          <div class="card-panel" style="margin-bottom:1rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+              <div>
+                <div class="section-eyebrow">Personal Exegesis Archive</div>
+                <h3 class="section-title">Apostolic Study Logbook Entries</h3>
+              </div>
+              <input
+                type="text"
+                class="text-input"
+                style="min-width:260px;"
+                placeholder="Filter notes by scripture, topic, Greek word..."
+                oninput="window.filterStudyLogs(this.value)"
+              />
+            </div>
+          </div>
+
+          <div id="study-logs-list" class="log-entries-list"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="data/bible-data.js"></script>
+  <script src="data/study-bible-context.js"></script>
+  <script src="data/apostolic-topics.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
