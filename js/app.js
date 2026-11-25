@@ -274,13 +274,18 @@
   window.toggleChapterRead = function (chapterKey, stopProp) {
     if (stopProp && stopProp.stopPropagation) stopProp.stopPropagation();
     const todayISO = toLocalISOString(new Date());
+    let isNowRead = false;
     if (state.readChapters[chapterKey]) {
       delete state.readChapters[chapterKey];
     } else {
       state.readChapters[chapterKey] = todayISO;
+      isNowRead = true;
     }
     saveReadChapters();
     renderAllTrackerViews();
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncSingleChapter(chapterKey, isNowRead, todayISO);
+    }
   };
 
   window.toggleDayTileCompletion = function (dayNumber) {
@@ -288,6 +293,7 @@
     if (!tile) return;
     const todayISO = toLocalISOString(new Date());
     const allAlreadyRead = tile.chapters.every((ch) => Boolean(state.readChapters[ch.key]));
+    const keys = tile.chapters.map((ch) => ch.key);
 
     tile.chapters.forEach((ch) => {
       if (allAlreadyRead) {
@@ -299,6 +305,9 @@
 
     saveReadChapters();
     renderAllTrackerViews();
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncBatchChapters(keys, !allAlreadyRead, todayISO);
+    }
   };
 
   window.openChapterInReader = function (bookName, chapterNum) {
@@ -326,6 +335,9 @@
     state.yearPlan = generate365DayPlan(newISO);
     state.selectedDayNumber = getCurrentPlanDayNumber();
     renderAllTrackerViews();
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncSettings();
+    }
   };
 
   // Render Top Ticker & 365-Day Tracker Dashboard with Circular SVG Ring
@@ -1446,7 +1458,7 @@
 
     if (!title || !passage) return;
 
-    state.studyLogs.unshift({
+    const newEntry = {
       id: "log-" + Date.now(),
       date: toLocalISOString(new Date()),
       title,
@@ -1456,16 +1468,23 @@
       firstMentionAndLexicon,
       christSubstance,
       rhemaLegislation
-    });
+    };
+    state.studyLogs.unshift(newEntry);
     saveStudyLogs();
     document.getElementById("study-log-form").reset();
     renderStudyLogs();
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncUpsertStudyLog(newEntry);
+    }
   };
 
   window.deleteStudyLog = function (logId) {
     state.studyLogs = state.studyLogs.filter((l) => l.id !== logId);
     saveStudyLogs();
     renderStudyLogs();
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncDeleteStudyLog(logId);
+    }
   };
 
   window.exportAllStudyData = function () {
@@ -1573,6 +1592,56 @@
     } else {
       document.documentElement.setAttribute("data-theme", "parchment");
       localStorage.setItem(STORAGE_KEYS.THEME, "parchment");
+    }
+    if (window.RWH_CLOUD) {
+      window.RWH_CLOUD.syncSettings();
+    }
+  };
+
+  // Expose controlled state bridge for Supabase Cloud Sync
+  window.RWH_APP = {
+    getStateSnapshot: function () {
+      return {
+        startDateISO: state.startDateISO,
+        theme: document.documentElement.getAttribute("data-theme") === "parchment" ? "parchment" : "royal-dark",
+        fontSizeRem: state.fontSizeRem,
+        readChapters: Object.assign({}, state.readChapters),
+        studyLogs: state.studyLogs.slice()
+      };
+    },
+    applyMergedCloudState: function (merged) {
+      if (merged.startDateISO && merged.startDateISO !== state.startDateISO) {
+        state.startDateISO = merged.startDateISO;
+        localStorage.setItem(STORAGE_KEYS.START_DATE, state.startDateISO);
+        state.yearPlan = generate365DayPlan(state.startDateISO);
+        state.selectedDayNumber = getCurrentPlanDayNumber();
+      }
+      if (merged.theme) {
+        if (merged.theme === "parchment") {
+          document.documentElement.setAttribute("data-theme", "parchment");
+        } else {
+          document.documentElement.removeAttribute("data-theme");
+        }
+        localStorage.setItem(STORAGE_KEYS.THEME, merged.theme);
+      }
+      if (merged.fontSizeRem && !isNaN(merged.fontSizeRem)) {
+        state.fontSizeRem = Number(merged.fontSizeRem);
+        document.documentElement.style.setProperty("--scripture-size", `${state.fontSizeRem}rem`);
+        localStorage.setItem(STORAGE_KEYS.FONT_SIZE, String(state.fontSizeRem));
+      }
+      if (merged.readChapters) {
+        state.readChapters = merged.readChapters;
+        saveReadChapters();
+      }
+      if (Array.isArray(merged.studyLogs)) {
+        state.studyLogs = merged.studyLogs;
+        saveStudyLogs();
+      }
+      renderAllTrackerViews();
+      renderStudyLogs();
+      if (state.activeTab === "reader") {
+        renderBibleReader();
+      }
     }
   };
 
