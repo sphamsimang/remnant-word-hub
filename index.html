@@ -3,385 +3,387 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#070a12" />
+  <meta name="theme-color" content="#9e1b22" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Remnant Word Hub • KJV/NKJV Study Bible, BLB Concordance & 365-Day Apostolic Tracker</title>
-  <meta name="description" content="Complete 66-Book KJV & NKJV Study Bible with Historical Context, Interactive Chapter Maps, Blue Letter Bible Strong's Concordance, 365-Day Tile Tracker & Completion Forecaster, and Apostolic Pre-Studies." />
+  <title>Remnant Word Hub • KJV & NKJV Study Bible, 365 Reading Tracker & Personal Reflections</title>
+  <meta name="description" content="Clean BibleGateway-inspired 3-column Study Bible workspace: 365-Day Reading Plan & Finish Tracker on the left, full 66-book KJV & NKJV Scripture with Chapter Maps & Strong's Concordance in the center, and personal Insights & Reflect notes synced to the cloud on the right." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@500;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <!-- Top Glassmorphic Navigation Bar -->
-  <header class="top-header">
-    <div class="header-inner">
-      <div class="brand-group" onclick="window.switchTab('tracker')">
-        <div class="brand-emblem">Ω</div>
-        <div>
-          <div class="brand-title">REMNANT WORD HUB</div>
-          <div class="brand-subtitle">Full KJV • NKJV • BLB Lexicon • Study Maps • 365 Tracker</div>
+  <!-- Clean BibleGateway-Inspired Top Bar (Zero Commercial Clutter) -->
+  <header class="bgw-header">
+    <div class="bgw-header-inner">
+      <!-- Brand + Desktop Pane Toggles -->
+      <div class="bgw-brand-area">
+        <div class="bgw-logo" onclick="window.setMobilePane('scripture')" title="Remnant Word Hub">
+          <div class="bgw-logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <span class="bgw-logo-text">Remnant Word</span>
+        </div>
+
+        <div class="util-group desktop-pane-toggles" title="Show or Hide Side Panels">
+          <button id="toggle-left-pane-btn" class="util-btn active-pane-toggle" onclick="window.toggleDesktopPane('left')">◧ Plan</button>
+          <button id="toggle-right-pane-btn" class="util-btn active-pane-toggle" onclick="window.toggleDesktopPane('right')">Insights ◨</button>
         </div>
       </div>
 
-      <!-- Desktop Segmented Navigation -->
-      <nav class="main-nav" aria-label="Primary Workspace Navigation">
-        <button class="nav-btn active" data-tab="tracker" onclick="window.switchTab('tracker')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span>365 Tracker</span>
-          <span id="nav-tracker-badge" class="nav-badge">0.0%</span>
+      <!-- Unified Passage Search & Translation Selector Bar -->
+      <form class="bgw-search-bar" onsubmit="window.handlePassageSearch(event)">
+        <button type="button" class="bgw-books-trigger" onclick="window.openBookPickerModal()" title="Browse all 66 Books & 1,189 Chapters">
+          <span>📚</span>
+          <span id="header-active-ref">John 1</span>
+          <span style="font-size:0.68rem;color:var(--text-muted);">▾</span>
         </button>
-        <button class="nav-btn" data-tab="reader" onclick="window.switchTab('reader')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-          <span>Study Bible (KJV / NKJV)</span>
-        </button>
-        <button class="nav-btn" data-tab="topics" onclick="window.switchTab('topics')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span>Apostolic Pre-Studies</span>
-          <span class="nav-badge">6</span>
-        </button>
-        <button class="nav-btn" data-tab="journal" onclick="window.switchTab('journal')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          <span>Study Logbook</span>
-          <span id="nav-journal-badge" class="nav-badge">2</span>
-        </button>
-      </nav>
 
-      <div class="header-actions">
-        <button id="cloud-sync-header-btn" class="btn-outline" onclick="window.openCloudSyncModal()" title="Sign in with Supabase Cloud Sync across Phone & Desktop">
-          <span>☁️</span><span class="btn-label-desktop">Cloud Sync</span>
+        <input
+          type="text"
+          id="passage-search-input"
+          class="bgw-passage-input"
+          placeholder="Enter passage (e.g. Romans 8, Ps 23, Heb 9:14)..."
+          aria-label="Search Bible passage"
+        />
+
+        <select id="header-version-select" class="bgw-version-select" onchange="window.setReaderVersionMode(this.value)" aria-label="Select Bible Version">
+          <option value="nkjv">NKJV</option>
+          <option value="kjv">KJV</option>
+          <option value="parallel" selected>KJV + NKJV</option>
+        </select>
+
+        <button type="submit" class="bgw-search-submit" title="Go to Passage">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span class="desktop-label">Go</span>
         </button>
-        <button class="btn-outline" onclick="window.toggleTheme()" title="Switch between Velvet Dark and Illuminated Parchment">
-          <span>🌗</span><span class="btn-label-desktop">Theme</span>
-        </button>
-        <button class="btn-outline" onclick="window.exportAllStudyData()" title="Export 365 Progress & Logbook JSON Backup">
-          <span>⬇</span><span class="btn-label-desktop">Backup</span>
+      </form>
+
+      <!-- Essential Utilities: Font Size, Dark Mode, Login & Cloud Sync -->
+      <div class="bgw-utilities">
+        <div class="util-group" title="Adjust Scripture Font Size">
+          <button type="button" class="util-btn" onclick="window.adjustScriptureFontSize(-1)" aria-label="Decrease Font Size">A-</button>
+          <button type="button" class="util-btn" onclick="window.adjustScriptureFontSize(1)" aria-label="Increase Font Size">A+</button>
+        </div>
+
+        <div class="util-group">
+          <button type="button" id="dark-mode-toggle-btn" class="util-btn" onclick="window.toggleTheme()" title="Toggle Light / Dark Mode" aria-label="Toggle Dark Mode">
+            🌙
+          </button>
+        </div>
+
+        <button type="button" id="cloud-sync-header-btn" class="cloud-login-btn" onclick="window.openCloudSyncModal()" title="Login & Sync to Cloud">
+          <span>☁️</span>
+          <span class="desktop-label">Sign In</span>
         </button>
       </div>
     </div>
-
-    <!-- Real-Time Completion Date & Pace Indicator Banner -->
-    <div id="live-completion-ticker" class="completion-ticker-bar"></div>
   </header>
 
-  <!-- Main Workspace -->
-  <main class="app-container">
+  <!-- =======================================================================
+       3-COLUMN BIBLEGATEWAY WORKSPACE
+       LEFT: Reading Plan & Tracker | CENTER: Scripture | RIGHT: Insights & Reflect
+       ======================================================================= -->
+  <main id="main-workspace" class="bgw-workspace">
 
-    <!-- ===================================================================
-         VIEW 1: 365-DAY YEARLY TILE BIBLE STUDY & FINISH DATE FORECASTER
-         =================================================================== -->
-    <section id="view-tracker" class="view-section active">
-      <div class="tracker-hero-grid">
-        <div id="forecast-hero-panel" class="card-panel"></div>
-        <div id="today-assignment-panel" class="card-panel today-reading-card"></div>
-      </div>
-
-      <div class="card-panel">
-        <div class="tile-matrix-controls">
-          <div>
-            <div class="section-eyebrow">365-Day Interactive Tile Roadmap • 1,189 Chapters</div>
-            <h3 class="section-title">Yearly Bible Study Tiles</h3>
-          </div>
-
-          <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;">
-            <input
-              type="text"
-              class="text-input"
-              placeholder="Search Day #, Book (e.g. Psalms, Romans)..."
-              oninput="window.setTileSearch(this.value)"
-              style="min-width:210px;flex:1;"
-            />
-            <div class="filter-pills">
-              <button class="filter-pill tile-filter-btn active" data-filter="all" onclick="window.setTileFilter('all')">All 365</button>
-              <button class="filter-pill tile-filter-btn" data-filter="remaining" onclick="window.setTileFilter('remaining')">Remaining</button>
-              <button class="filter-pill tile-filter-btn" data-filter="completed" onclick="window.setTileFilter('completed')">Done ✓</button>
-              <button class="filter-pill tile-filter-btn" data-filter="ot" onclick="window.setTileFilter('ot')">OT</button>
-              <button class="filter-pill tile-filter-btn" data-filter="nt" onclick="window.setTileFilter('nt')">NT</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="year-tiles-grid" class="year-tiles-grid"></div>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         VIEW 2: FULL 66-BOOK KJV & NKJV STUDY BIBLE + MAPS + BLB CONCORDANCE
-         =================================================================== -->
-    <section id="view-reader" class="view-section">
-      <div class="reader-workspace">
-        <!-- Left: Scripture Reader, Study Context & Interactive Map -->
-        <div class="card-panel">
-          <div class="reader-sticky-bar">
-            <div class="reader-controls-row">
-              <button class="btn-icon-round" onclick="window.navigateChapter(-1)" title="Previous Chapter" aria-label="Previous Chapter">‹</button>
-              <button id="book-picker-btn" class="book-picker-trigger" onclick="window.openBookPickerModal()">
-                <span id="active-book-chapter-label">John 1</span>
-                <span style="font-size:0.75rem;color:var(--gold);">▾</span>
-              </button>
-              <button class="btn-icon-round" onclick="window.navigateChapter(1)" title="Next Chapter" aria-label="Next Chapter">›</button>
-            </div>
-
-            <div class="reader-controls-row">
-              <div class="version-toggle-group">
-                <button class="version-btn active" data-mode="parallel" onclick="window.setReaderVersionMode('parallel')">KJV + NKJV</button>
-                <button class="version-btn" data-mode="kjv" onclick="window.setReaderVersionMode('kjv')">KJV</button>
-                <button class="version-btn" data-mode="nkjv" onclick="window.setReaderVersionMode('nkjv')">NKJV</button>
-              </div>
-              <button id="toggle-strongs-btn" class="btn-outline" onclick="window.toggleStrongsVisibility()" title="Toggle Strong's Hebrew & Greek Numbers">
-                🔎 Strong's: ON
-              </button>
-              <button class="btn-icon-round" onclick="window.adjustScriptureFontSize(-1)" title="Smaller Text">A-</button>
-              <button class="btn-icon-round" onclick="window.adjustScriptureFontSize(1)" title="Larger Text">A+</button>
-            </div>
-          </div>
-
-          <!-- Context/Map Toggle & Apostolic Key Chapters Quick Jump -->
-          <div class="reader-subtabs">
-            <div class="subtab-pills">
-              <button id="toggle-context-map-btn" class="filter-pill active" onclick="window.toggleContextMapPanel()">
-                🗺️ Study Context & Chapter Map: ON
-              </button>
-              <button class="filter-pill" onclick="window.openMobileConcordanceDrawer()">
-                📘 Open BLB Concordance
-              </button>
-            </div>
-
-            <select class="select-input" onchange="if(this.value) { window.jumpToCuratedChapter(this.value); this.value=''; }" aria-label="Key Apostolic Chapters">
-              <option value="">⚡ Key Apostolic Chapters...</option>
-              <option value="Genesis_1">Genesis 1 — Elohim, Ruwach & Dominion</option>
-              <option value="Exodus_12">Exodus 12 — The Passover Blood</option>
-              <option value="Leviticus_17">Leviticus 17 — Nephesh in the Blood</option>
-              <option value="John_1">John 1 — Eternal Logos, Zoe & Exousia</option>
-              <option value="Romans_3">Romans 3 — Hilasterion Mercy Seat</option>
-              <option value="Romans_8">Romans 8 — Law of Zoe & Mature Huioi</option>
-              <option value="Ephesians_1">Ephesians 1 — Redemption Blood & Dunamis</option>
-              <option value="Hebrews_4">Hebrews 4 — Surgical Logos: Soul vs Spirit</option>
-              <option value="Hebrews_9">Hebrews 9 — Heavenly Tabernacle & Blood</option>
-              <option value="Hebrews_12">Hebrews 12 — Mount Zion & Speaking Blood</option>
-              <option value="Revelation_12">Revelation 12 — Overcoming the Accuser</option>
-            </select>
-          </div>
-
-          <div id="reader-chapter-banner" class="apostolic-chapter-banner"></div>
-
-          <!-- Study Bible Historical Context & Interactive Chapter Map -->
-          <div id="reader-study-context-map" class="study-bible-context-grid"></div>
-
-          <!-- Full Chapter Verses (KJV + NKJV) -->
-          <div id="reader-verses-container" class="verses-container"></div>
-
-          <!-- Bottom Chapter Navigation -->
-          <div id="reader-chapter-footer" class="chapter-nav-footer"></div>
-        </div>
-
-        <!-- Right: Blue Letter Bible + Apostolic Lexicon & Concordance Inspector -->
-        <aside id="concordance-inspector-aside" class="card-panel concordance-inspector">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-            <div>
-              <div class="section-eyebrow">Blue Letter Bible + Apostolic Lexicon</div>
-              <h3 class="section-title" style="font-size:1.12rem;">Strong's Concordance (14,000+ Words)</h3>
-            </div>
-            <button class="btn-icon-round mobile-drawer-close" onclick="window.closeMobileConcordanceDrawer()" aria-label="Close Lexicon">✕</button>
-          </div>
-
-          <div style="margin-bottom:0.85rem;">
-            <input
-              type="text"
-              class="text-input"
-              style="width:100%;"
-              placeholder="Search Strong's (e.g. G3056, H7225, Blood, Zoe)..."
-              oninput="window.searchStrongsConcordance(this.value)"
-            />
-            <div id="concordance-search-results"></div>
-          </div>
-
-          <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.95rem;">
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G3056')">G3056 Logos</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G4487')">G4487 Rhema</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G2222')">G2222 Zoe</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G4991')">G4991 Soteria</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G129')">G129 Haima</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('H1818')">H1818 Dam</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G2435')">G2435 Hilasterion</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G5207')">G5207 Huios</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G1411')">G1411 Dunamis</span>
-            <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G1849')">G1849 Exousia</span>
-          </div>
-
-          <div id="blb-lexicon-content"></div>
-        </aside>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         VIEW 3: APOSTOLIC TOPIC PRE-STUDIES & CORE CONCEPTS OF CHRIST
-         =================================================================== -->
-    <section id="view-topics" class="view-section">
-      <div class="topics-layout">
-        <aside class="card-panel">
-          <div class="section-eyebrow">Apostolic Curriculum & Doctrinal Pillars</div>
-          <h3 class="section-title" style="margin-bottom:0.35rem;">Topic Pre-Studies</h3>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.95rem;">
-            Systematic scriptural breakdown after <strong>Apostle Arome Osayi</strong>, <strong>Apostle Tolu Agboola</strong>, and <strong>Apostle Gideon Adoma</strong>.
-          </p>
-          <div id="apostolic-topics-nav" class="topic-list-card"></div>
-        </aside>
-
-        <div id="apostolic-topic-detail" class="card-panel"></div>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         VIEW 4: STUDY NOTES & EXEGESIS LOGBOOK
-         =================================================================== -->
-    <section id="view-journal" class="view-section">
-      <div class="journal-grid">
-        <div class="card-panel">
-          <div class="section-eyebrow">Beyond Blue Letter Bible • Exegesis Builder</div>
-          <h3 class="section-title" style="margin-bottom:0.35rem;">Log New Study Entry</h3>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">
-            Record First Mention, Strong's Hebrew/Greek roots, New Creation Substance, and Spoken Rhema Legislation.
-          </p>
-
-          <form id="study-log-form" onsubmit="window.saveNewStudyLog(event)">
-            <div class="form-group">
-              <label class="form-label" for="log-title-input">Study Title / Core Thesis</label>
-              <input type="text" id="log-title-input" class="text-input" style="width:100%;" placeholder="e.g. The Sevenfold Jurisdiction of the Blood" required />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="log-passage-input">Governing Scripture Passages</label>
-              <input type="text" id="log-passage-input" class="text-input" style="width:100%;" placeholder="e.g. Leviticus 17:11; Hebrews 9:14; 12:24" required />
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
-              <div class="form-group">
-                <label class="form-label" for="log-topic-select">Doctrinal Stream</label>
-                <select id="log-topic-select" class="select-input" style="width:100%;">
-                  <option value="Core Concepts of Christ & What He Brought">Core Concepts of Christ</option>
-                  <option value="Salvation (Spirit, Soul & Body)">Salvation (Soteria)</option>
-                  <option value="The Power & Jurisdiction of the Blood">The Power of the Blood</option>
-                  <option value="Economy of Sonship (Teknon to Huios)">Economy of Sonship</option>
-                  <option value="Logos, Rhema & Spiritual Legislation">Logos & Rhema</option>
-                  <option value="Priesthood, Altars & Kingdom Dominion">Priesthood & Altars</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="log-minister-select">Exegesis Pattern</label>
-                <select id="log-minister-select" class="select-input" style="width:100%;">
-                  <option value="Apostle Arome Osayi Pattern">Apostle Arome Osayi</option>
-                  <option value="Apostle Tolu Agboola Pattern">Apostle Tolu Agboola</option>
-                  <option value="Apostle Gideon Adoma Pattern">Apostle Gideon Adoma</option>
-                  <option value="Combined Apostolic Synthesis">Combined Synthesis</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="log-lexicon-input">1. First Mention, OT Shadow & Hebrew/Greek Lexicon</label>
-              <textarea id="log-lexicon-input" class="textarea-input" placeholder="Strong's Hebrew/Greek roots, Law of First Mention, Old Testament shadows..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="log-christ-input">2. New Testament Substance (What Christ Brought)</label>
-              <textarea id="log-christ-input" class="textarea-input" placeholder="Legal transaction at the Cross vs. vital experiential formation in the believer..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="log-rhema-input">3. Spoken Rhema Legislation & Altar Action</label>
-              <textarea id="log-rhema-input" class="textarea-input" placeholder="Your spoken prayer decree and practical alignment..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-gold" style="width:100%;padding:0.75rem;">
-              💾 Save Apostolic Study Entry
-            </button>
-          </form>
-        </div>
-
+    <!-- LEFT COLUMN: 365-DAY BIBLE READING PLAN & COMPLETION TRACKER -->
+    <aside id="pane-left-plan" class="left-plan-pane" aria-label="Bible Reading Plan and Tracker">
+      <div class="pane-section-header">
         <div>
-          <div class="card-panel" style="margin-bottom:1rem;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.85rem;flex-wrap:wrap;">
-              <div>
-                <div class="section-eyebrow">Personal Exegesis Archive</div>
-                <h3 class="section-title">Study Logbook Entries</h3>
-              </div>
-              <input type="text" class="text-input" style="min-width:220px;flex:1;max-width:340px;" placeholder="Filter notes by scripture, topic..." oninput="window.filterStudyLogs(this.value)" />
-            </div>
+          <div class="pane-eyebrow">365-Day Yearly Plan</div>
+          <h2 class="pane-title">Reading Plan & Tracker</h2>
+        </div>
+        <input
+          type="date"
+          id="plan-start-input"
+          class="clean-input"
+          style="width:auto;padding:0.28rem 0.45rem;font-size:0.74rem;"
+          title="Change 365-Day Plan Start Date"
+          onchange="window.updatePlanStartDate(this.value)"
+        />
+      </div>
+
+      <!-- Completion Progress & Live Projected Finish Date -->
+      <div id="tracker-summary-panel" class="tracker-summary-card"></div>
+
+      <!-- Active / Today's Reading Assignment -->
+      <div id="today-assignment-panel" class="today-plan-card"></div>
+
+      <!-- 365-Day Tile List & Filters -->
+      <div>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
+          <input
+            type="text"
+            class="clean-input"
+            placeholder="Search Day # or Book..."
+            oninput="window.setTileSearch(this.value)"
+            style="padding:0.42rem 0.65rem;font-size:0.78rem;"
+          />
+        </div>
+        <div style="display:flex;gap:0.28rem;flex-wrap:wrap;">
+          <button class="user-topic-chip tile-filter-btn active" data-filter="all" onclick="window.setTileFilter('all')">All 365</button>
+          <button class="user-topic-chip tile-filter-btn" data-filter="remaining" onclick="window.setTileFilter('remaining')">Left</button>
+          <button class="user-topic-chip tile-filter-btn" data-filter="completed" onclick="window.setTileFilter('completed')">Done ✓</button>
+          <button class="user-topic-chip tile-filter-btn" data-filter="ot" onclick="window.setTileFilter('ot')">OT</button>
+          <button class="user-topic-chip tile-filter-btn" data-filter="nt" onclick="window.setTileFilter('nt')">NT</button>
+        </div>
+
+        <div id="sidebar-tiles-list" class="sidebar-tiles-list"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER COLUMN: SCRIPTURE READING CANVAS + CHAPTER CONTEXT & MAP -->
+    <section id="pane-center-scripture" class="center-scripture-pane mobile-active" aria-label="Bible Scripture Reading">
+      <!-- Chapter Heading & Prev/Next Controls -->
+      <div id="scripture-chapter-header" class="scripture-top-bar"></div>
+
+      <!-- BibleGateway-Style Page Options Bar -->
+      <div class="bgw-page-options">
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+          <button id="opt-parallel-btn" class="option-chip active" onclick="window.toggleParallelQuick()">
+            ⇄ Parallel KJV / NKJV
+          </button>
+          <button id="opt-strongs-btn" class="option-chip active" onclick="window.toggleStrongsVisibility()">
+            🔎 Strong's Numbers: ON
+          </button>
+          <button id="opt-context-map-btn" class="option-chip" onclick="window.toggleContextMapPanel()">
+            🗺️ Chapter Context & Map
+          </button>
+        </div>
+
+        <span style="font-size:0.74rem;color:var(--text-muted);">
+          Tip: Click any verse to <strong>Reflect</strong> or any Strong's code for <strong>Lexicon</strong>
+        </span>
+      </div>
+
+      <!-- Collapsible Study Bible Historical Context & Interactive Chapter Map -->
+      <div id="reader-study-context-map" class="chapter-context-drawer hidden"></div>
+
+      <!-- Verses Flow -->
+      <div id="reader-verses-container" class="bgw-verses-flow"></div>
+
+      <!-- Bottom Chapter Navigation -->
+      <div id="reader-chapter-footer" class="chapter-bottom-nav"></div>
+    </section>
+
+    <!-- RIGHT COLUMN: INSIGHTS & REFLECT (100% FED BY YOUR OWN STUDIES + BLB LEXICON) -->
+    <aside id="pane-right-reflect" class="right-reflect-pane" aria-label="Insights and Personal Reflections">
+      <div class="pane-section-header">
+        <div>
+          <div class="pane-eyebrow">Personal Study & Concordance</div>
+          <h2 class="pane-title">Insights & Reflect</h2>
+        </div>
+        <button class="btn-secondary" style="padding:0.28rem 0.58rem;font-size:0.72rem;" onclick="window.exportAllStudyData()" title="Export Backup JSON">
+          ⬇ Export
+        </button>
+      </div>
+
+      <!-- 3 Clean Sub-Tabs inside Right Pane -->
+      <div class="reflect-tabs">
+        <button class="reflect-tab-btn active" data-rtab="compose" onclick="window.switchReflectTab('compose')">
+          ✍️ Reflect
+        </button>
+        <button class="reflect-tab-btn" data-rtab="notes" onclick="window.switchReflectTab('notes')">
+          📚 Notes (<span id="notes-count-badge">0</span>)
+        </button>
+        <button class="reflect-tab-btn" data-rtab="lexicon" onclick="window.switchReflectTab('lexicon')">
+          🔎 Lexicon
+        </button>
+      </div>
+
+      <!-- Subpanel 1: Compose / Edit Personal Reflection & Study Note -->
+      <div id="rpanel-compose" class="reflect-subpanel active">
+        <form id="study-log-form" onsubmit="window.saveNewStudyLog(event)">
+          <input type="hidden" id="log-edit-id" value="" />
+
+          <div class="field-group">
+            <label class="field-label" for="log-passage-input">Passage / Verse Reference</label>
+            <input
+              type="text"
+              id="log-passage-input"
+              class="clean-input"
+              placeholder="e.g. John 1:14"
+              required
+            />
           </div>
 
-          <div id="study-logs-list" class="log-entries-list"></div>
-        </div>
+          <div class="field-group">
+            <label class="field-label" for="log-title-input">Study Title / Key Insight</label>
+            <input
+              type="text"
+              id="log-title-input"
+              class="clean-input"
+              placeholder="What stood out in your study today?"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="log-topic-input">My Study Topic / Tag (Builds your personal topics)</label>
+            <input
+              type="text"
+              id="log-topic-input"
+              list="user-studied-topics-datalist"
+              class="clean-input"
+              placeholder="e.g. Salvation, The Blood, Grace, Faith..."
+            />
+            <datalist id="user-studied-topics-datalist"></datalist>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="log-christ-input">Reflections & Scriptural Breakdown</label>
+            <textarea
+              id="log-christ-input"
+              class="clean-textarea"
+              style="min-height:125px;"
+              placeholder="Write your reflections, cross-references, and what the Spirit is showing you in this passage..."
+              required
+            ></textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="log-lexicon-input">Word Study / Concordance Notes (Optional)</label>
+            <textarea
+              id="log-lexicon-input"
+              class="clean-textarea"
+              style="min-height:68px;"
+              placeholder="Hebrew/Greek Strong's words or cross-references..."
+            ></textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="log-rhema-input">Prayer & Personal Application (Optional)</label>
+            <textarea
+              id="log-rhema-input"
+              class="clean-textarea"
+              style="min-height:64px;"
+              placeholder="Personal prayer, response, or action step..."
+            ></textarea>
+          </div>
+
+          <div style="display:flex;gap:0.5rem;">
+            <button type="submit" id="save-note-submit-btn" class="btn-crimson" style="flex:1;">
+              💾 Save Reflection
+            </button>
+            <button type="button" id="cancel-edit-note-btn" class="btn-secondary" style="display:none;" onclick="window.resetNoteComposer()">
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
-    </section>
+
+      <!-- Subpanel 2: Personal Notes Feed & Self-Studied Topics -->
+      <div id="rpanel-notes" class="reflect-subpanel">
+        <div style="display:flex;gap:0.3rem;margin-bottom:0.65rem;">
+          <button class="user-topic-chip notes-scope-btn active" data-scope="all" onclick="window.setNotesScope('all')">All My Notes</button>
+          <button class="user-topic-chip notes-scope-btn" data-scope="book" onclick="window.setNotesScope('book')">This Book</button>
+          <button class="user-topic-chip notes-scope-btn" data-scope="chapter" onclick="window.setNotesScope('chapter')">This Chapter</button>
+        </div>
+
+        <!-- Dynamically populated ONLY from topics the user has studied themselves -->
+        <div id="personal-topics-cloud" class="personal-topics-cloud"></div>
+
+        <div class="field-group">
+          <input
+            type="text"
+            id="notes-search-input"
+            class="clean-input"
+            placeholder="Search your reflections, verses, topics..."
+            oninput="window.renderStudyLogs()"
+          />
+        </div>
+
+        <div id="study-logs-list"></div>
+      </div>
+
+      <!-- Subpanel 3: Live 14,000+ Blue Letter Bible Strong's Lexicon -->
+      <div id="rpanel-lexicon" class="reflect-subpanel">
+        <div class="field-group">
+          <input
+            type="text"
+            class="clean-input"
+            placeholder="Search Strong's (e.g. G3056, H7225, Zoe, Blood)..."
+            oninput="window.searchStrongsConcordance(this.value)"
+          />
+          <div id="concordance-search-results"></div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:0.28rem;margin-bottom:0.8rem;">
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G3056')">G3056 Logos</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G4487')">G4487 Rhema</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G2222')">G2222 Zoe</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G4991')">G4991 Soteria</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G129')">G129 Haima</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('H1818')">H1818 Dam</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G5207')">G5207 Huios</span>
+          <span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('G1411')">G1411 Dunamis</span>
+        </div>
+
+        <div id="blb-lexicon-content"></div>
+      </div>
+    </aside>
 
   </main>
 
-  <!-- Native Mobile Bottom Tab Navigation -->
-  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
-    <button class="mobile-tab-btn active" data-tab="tracker" onclick="window.switchTab('tracker')">
+  <!-- Mobile Bottom 3-Pane Switcher (Left Plan | Center Scripture | Right Insights & Reflect) -->
+  <nav class="mobile-pane-bar" aria-label="Mobile Workspace Switcher">
+    <button class="mob-pane-btn" data-mpane="plan" onclick="window.setMobilePane('plan')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span>365 Plan</span>
+      <span>Plan (<span id="mob-plan-pct">0%</span>)</span>
     </button>
-    <button class="mobile-tab-btn" data-tab="reader" onclick="window.switchTab('reader')">
+    <button class="mob-pane-btn active" data-mpane="scripture" onclick="window.setMobilePane('scripture')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      <span>Bible</span>
+      <span>Scripture</span>
     </button>
-    <button class="mobile-tab-btn" data-tab="topics" onclick="window.switchTab('topics')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      <span>Pre-Studies</span>
-    </button>
-    <button class="mobile-tab-btn" data-tab="journal" onclick="window.switchTab('journal')">
+    <button class="mob-pane-btn" data-mpane="reflect" onclick="window.setMobilePane('reflect')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      <span>Logbook</span>
+      <span>Insights & Reflect</span>
     </button>
   </nav>
 
-  <!-- Full 66-Book / 1,189-Chapter Picker Modal -->
+  <!-- 66-Book / 1,189-Chapter Picker Modal -->
   <div id="book-picker-modal" class="modal-backdrop" onclick="if(event.target === this) window.closeBookPickerModal()">
-    <div class="picker-modal" role="dialog" aria-modal="true" aria-label="Select Bible Book and Chapter">
-      <div class="picker-header">
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-label="Select Bible Book and Chapter">
+      <div class="modal-header">
         <div>
-          <div class="section-eyebrow">Whole Counsel of God • 66 Books • 1,189 Chapters</div>
-          <h3 class="section-title" style="font-size:1.15rem;">Select Book & Chapter</h3>
+          <div class="pane-eyebrow">66 Books • 1,189 Chapters</div>
+          <h3 class="pane-title" style="font-size:1.12rem;">Select Book & Chapter</h3>
         </div>
-        <button class="btn-icon-round" onclick="window.closeBookPickerModal()" aria-label="Close">✕</button>
+        <button class="btn-secondary" style="padding:0.35rem 0.65rem;" onclick="window.closeBookPickerModal()" aria-label="Close">✕</button>
       </div>
-      <div class="picker-body">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.65rem;flex-wrap:wrap;margin-bottom:0.9rem;">
-          <div class="filter-pills">
-            <button class="filter-pill picker-testament-btn active" data-t="ALL" onclick="window.setPickerTestament('ALL')">All 66 Books</button>
-            <button class="filter-pill picker-testament-btn" data-t="OT" onclick="window.setPickerTestament('OT')">Old Testament (39)</button>
-            <button class="filter-pill picker-testament-btn" data-t="NT" onclick="window.setPickerTestament('NT')">New Testament (27)</button>
+      <div class="modal-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+          <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+            <button class="user-topic-chip picker-testament-btn active" data-t="ALL" onclick="window.setPickerTestament('ALL')">All (66)</button>
+            <button class="user-topic-chip picker-testament-btn" data-t="OT" onclick="window.setPickerTestament('OT')">Old Testament (39)</button>
+            <button class="user-topic-chip picker-testament-btn" data-t="NT" onclick="window.setPickerTestament('NT')">New Testament (27)</button>
           </div>
-          <input type="text" id="picker-book-search" class="text-input" placeholder="Filter books..." oninput="window.renderBookPickerContent()" style="min-width:170px;" />
+          <input type="text" id="picker-book-search" class="clean-input" placeholder="Filter books..." oninput="window.renderBookPickerContent()" style="max-width:200px;" />
         </div>
         <div id="picker-books-grid" class="books-grid"></div>
-        <div id="picker-chapters-section" style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border-hairline);"></div>
+        <div id="picker-chapters-section" style="margin-top:1.15rem;padding-top:1rem;border-top:1px solid var(--border-line);"></div>
       </div>
     </div>
   </div>
 
-  <!-- Supabase Cloud Sync Modal (sphamsimang) -->
+  <!-- Supabase Cloud Sync & Login Modal -->
   <div id="cloud-sync-modal" class="modal-backdrop" onclick="if(event.target === this) window.closeCloudSyncModal()">
-    <div class="picker-modal" style="max-width:440px;" role="dialog" aria-modal="true" aria-label="Supabase Cloud Sync">
-      <div class="picker-header">
+    <div class="modal-sheet" style="max-width:430px;" role="dialog" aria-modal="true" aria-label="Cloud Account and Sync">
+      <div class="modal-header">
         <div>
-          <div class="section-eyebrow">Cross-Device Cloud Sync • Supabase</div>
-          <h3 class="section-title" style="font-size:1.12rem;">Account & Sync</h3>
+          <div class="pane-eyebrow">Cross-Device Sync</div>
+          <h3 class="pane-title" style="font-size:1.12rem;">Account & Cloud Sync</h3>
         </div>
-        <button class="btn-icon-round" onclick="window.closeCloudSyncModal()" aria-label="Close">✕</button>
+        <button class="btn-secondary" style="padding:0.35rem 0.65rem;" onclick="window.closeCloudSyncModal()" aria-label="Close">✕</button>
       </div>
-      <div id="cloud-sync-modal-body" class="picker-body"></div>
+      <div id="cloud-sync-modal-body" class="modal-body"></div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
   <script src="data/bible-data.js"></script>
   <script src="data/study-bible-context.js"></script>
-  <script src="data/apostolic-topics.js"></script>
   <script src="js/app.js"></script>
   <script src="js/supabase-sync.js"></script>
 </body>

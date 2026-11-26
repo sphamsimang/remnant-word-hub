@@ -1,6 +1,6 @@
 /**
  * Remnant Word Hub — Supabase Cloud Sync Engine (sphamsimang / qzhyefggtlttefrswpxa)
- * Syncs 365-Day Reading Tracker, Plan Settings & Apostolic Study Logbook across Phone & Desktop.
+ * Syncs 365-Day Reading Plan, Settings & Personal Reflections across Phone & Desktop.
  */
 
 (function () {
@@ -19,7 +19,6 @@
     }
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-    // Listen to auth changes without awaiting inside the callback
     sbClient.auth.onAuthStateChange(function (event, session) {
       const nextUser = session && session.user ? session.user : null;
       const prevId = currentUser ? currentUser.id : null;
@@ -40,16 +39,15 @@
     const btn = document.getElementById("cloud-sync-header-btn");
     if (!btn) return;
 
+    btn.classList.remove("is-synced");
     if (status === "syncing") {
-      btn.innerHTML = `<span>↻</span><span class="btn-label-desktop">Syncing...</span>`;
-      btn.style.borderColor = "var(--gold)";
+      btn.innerHTML = `<span>↻</span><span class="desktop-label">Syncing...</span>`;
     } else if (status === "synced" && currentUser) {
-      const shortEmail = (currentUser.email || "Account").split("@")[0];
-      btn.innerHTML = `<span style="color:var(--emerald);">☁️</span><span class="btn-label-desktop">${shortEmail}</span>`;
-      btn.style.borderColor = "rgba(52, 211, 153, 0.55)";
+      const shortEmail = (currentUser.email || "Synced").split("@")[0];
+      btn.classList.add("is-synced");
+      btn.innerHTML = `<span>☁️</span><span class="desktop-label">${shortEmail}</span>`;
     } else {
-      btn.innerHTML = `<span>☁️</span><span class="btn-label-desktop">Cloud Sync</span>`;
-      btn.style.borderColor = "";
+      btn.innerHTML = `<span>☁️</span><span class="desktop-label">Sign In</span>`;
     }
   }
 
@@ -62,13 +60,12 @@
       return;
     }
     el.style.display = "block";
-    el.style.borderColor = isError ? "var(--crimson)" : "var(--emerald)";
-    el.style.color = isError ? "var(--crimson)" : "var(--emerald)";
-    el.style.background = isError ? "var(--crimson-soft)" : "var(--emerald-soft)";
+    el.style.borderColor = isError ? "var(--accent-primary)" : "var(--accent-emerald)";
+    el.style.color = isError ? "var(--accent-primary)" : "var(--accent-emerald)";
+    el.style.background = isError ? "var(--accent-primary-soft)" : "var(--accent-emerald-soft)";
     el.textContent = msg;
   }
 
-  // Bi-directional smart merge between local device state and Supabase Postgres
   async function performFullCloudMerge() {
     if (!sbClient || !currentUser || !window.RWH_APP || isSyncing) return;
     isSyncing = true;
@@ -114,7 +111,7 @@
         );
       }
 
-      // 2. Read Chapters Merge (Union of Cloud + Local)
+      // 2. Read Chapters Merge
       const cloudChaptersMap = {};
       (chaptersRes.data || []).forEach(function (row) {
         cloudChaptersMap[row.chapter_key] = row.read_date;
@@ -139,8 +136,10 @@
           .upsert(unsyncedChapters, { onConflict: "user_id,chapter_key" });
       }
 
-      // 3. Study Logbook Merge (Union by client_id)
-      const cloudLogs = logsRes.data || [];
+      // 3. Personal Study Notes Merge (Strictly User-Studied Notes, No Pre-Seeded Demos)
+      const cloudLogs = (logsRes.data || []).filter(function (r) {
+        return r && !String(r.client_id).startsWith("seed-log-");
+      });
       const cloudLogById = {};
       const mappedCloudLogs = cloudLogs.map(function (r) {
         cloudLogById[r.client_id] = true;
@@ -158,8 +157,7 @@
       });
 
       const localOnlyLogs = (local.studyLogs || []).filter(function (item) {
-        // Don't auto-push default demo seeds if cloud already has real entries, otherwise push all
-        if (cloudLogs.length > 0 && String(item.id).startsWith("seed-log-")) return false;
+        if (!item || String(item.id).startsWith("seed-log-")) return false;
         return !cloudLogById[item.id];
       });
 
@@ -171,8 +169,8 @@
             entry_date: item.date,
             title: item.title,
             passage: item.passage,
-            topic_tag: item.topicTag || "General Exegesis",
-            minister_pattern: item.ministerPattern || "Apostle Arome Osayi",
+            topic_tag: item.topicTag || "Personal Study",
+            minister_pattern: item.ministerPattern || "Personal Study",
             first_mention_lexicon: item.firstMentionAndLexicon || "",
             christ_substance: item.christSubstance || "",
             rhema_legislation: item.rhemaLegislation || ""
@@ -203,7 +201,6 @@
     }
   }
 
-  // Modal UI Controls
   window.openCloudSyncModal = function () {
     const modal = document.getElementById("cloud-sync-modal");
     if (modal) {
@@ -234,23 +231,23 @@
       const logCount = (snap.studyLogs || []).length;
 
       bodyEl.innerHTML = `
-        <div class="lex-block apostolic-highlight" style="margin-bottom:1rem;">
-          <div class="lex-block-title">☁️ Connected to Supabase Cloud (sphamsimang)</div>
-          <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin:0.25rem 0;">
+        <div class="lex-card" style="border-left:3.5px solid var(--accent-emerald);margin-bottom:0.9rem;">
+          <div class="lex-card-title" style="color:var(--accent-emerald);">☁️ Cloud Sync Active</div>
+          <div style="font-size:0.94rem;font-weight:700;color:var(--text-ink);margin:0.2rem 0;">
             ${currentUser.email}
           </div>
-          <div style="font-size:0.8rem;color:var(--text-secondary);">
-            Synced across Phone & Computer • <strong>${readCount}</strong> chapters read • <strong>${logCount}</strong> study logs
+          <div style="font-size:0.8rem;color:var(--text-muted);">
+            <strong>${readCount}</strong> chapters tracked · <strong>${logCount}</strong> personal reflections synced
           </div>
         </div>
 
-        <div id="cloud-auth-status-msg" style="display:none;padding:0.65rem 0.85rem;border-radius:10px;border:1px solid;font-size:0.82rem;margin-bottom:0.9rem;"></div>
+        <div id="cloud-auth-status-msg" style="display:none;padding:0.55rem 0.75rem;border-radius:8px;border:1px solid;font-size:0.8rem;margin-bottom:0.85rem;"></div>
 
-        <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
-          <button class="btn-gold" style="flex:1;" onclick="window.RWH_CLOUD.manualSyncNow()">
+        <div style="display:flex;gap:0.5rem;">
+          <button type="button" class="btn-crimson" style="flex:1;" onclick="window.RWH_CLOUD.manualSyncNow()">
             ↻ Sync Now
           </button>
-          <button class="btn-outline" onclick="window.RWH_CLOUD.signOut()">
+          <button type="button" class="btn-secondary" onclick="window.RWH_CLOUD.signOut()">
             Sign Out
           </button>
         </div>
@@ -259,38 +256,37 @@
     }
 
     bodyEl.innerHTML = `
-      <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.55;">
-        Sign in or create an account to automatically sync your <strong>365-Day Reading Progress</strong> and <strong>Apostolic Study Logbook</strong> across your phone, tablet, and computer.
+      <p style="font-size:0.83rem;color:var(--text-body);margin-bottom:0.9rem;line-height:1.55;">
+        Sign in to sync your <strong>365-Day Reading Plan</strong>, <strong>Personal Reflections</strong>, and settings between your phone and computer.
       </p>
 
-      <div class="filter-pills" style="margin-bottom:1rem;">
-        <button type="button" class="filter-pill ${authMode === "signin" ? "active" : ""}" onclick="window.setCloudAuthMode('signin')">
+      <div style="display:flex;gap:0.35rem;margin-bottom:0.9rem;">
+        <button type="button" class="user-topic-chip ${authMode === "signin" ? "active" : ""}" onclick="window.setCloudAuthMode('signin')">
           Sign In
         </button>
-        <button type="button" class="filter-pill ${authMode === "signup" ? "active" : ""}" onclick="window.setCloudAuthMode('signup')">
+        <button type="button" class="user-topic-chip ${authMode === "signup" ? "active" : ""}" onclick="window.setCloudAuthMode('signup')">
           Create Account
         </button>
       </div>
 
-      <div id="cloud-auth-status-msg" style="display:none;padding:0.65rem 0.85rem;border-radius:10px;border:1px solid;font-size:0.82rem;margin-bottom:0.9rem;"></div>
+      <div id="cloud-auth-status-msg" style="display:none;padding:0.55rem 0.75rem;border-radius:8px;border:1px solid;font-size:0.8rem;margin-bottom:0.85rem;"></div>
 
       <form onsubmit="window.RWH_CLOUD.submitAuthForm(event)">
-        <div class="form-group">
-          <label class="form-label" for="cloud-email-input">Email Address</label>
-          <input type="email" id="cloud-email-input" class="text-input" style="width:100%;" placeholder="you@example.com" required />
+        <div class="field-group">
+          <label class="field-label" for="cloud-email-input">Email Address</label>
+          <input type="email" id="cloud-email-input" class="clean-input" placeholder="you@example.com" required />
         </div>
-        <div class="form-group">
-          <label class="form-label" for="cloud-password-input">Password (min 6 characters)</label>
-          <input type="password" id="cloud-password-input" class="text-input" style="width:100%;" minlength="6" placeholder="••••••••" required />
+        <div class="field-group">
+          <label class="field-label" for="cloud-password-input">Password (min 6 characters)</label>
+          <input type="password" id="cloud-password-input" class="clean-input" minlength="6" placeholder="••••••••" required />
         </div>
-        <button type="submit" id="cloud-submit-btn" class="btn-gold" style="width:100%;padding:0.72rem;margin-top:0.35rem;">
-          ${authMode === "signin" ? "☁️ Sign In & Sync Progress" : "✨ Create Cloud Sync Account"}
+        <button type="submit" id="cloud-submit-btn" class="btn-crimson" style="width:100%;padding:0.65rem;margin-top:0.25rem;">
+          ${authMode === "signin" ? "☁️ Sign In & Sync" : "✨ Create Sync Account"}
         </button>
       </form>
     `;
   }
 
-  // Public Cloud Sync API used by app.js & modal
   window.RWH_CLOUD = {
     submitAuthForm: async function (e) {
       if (e && e.preventDefault) e.preventDefault();
@@ -317,7 +313,7 @@
             setCloudStatusMessage("Account created and synced!", false);
           } else {
             setCloudStatusMessage(
-              "Check your email inbox to confirm your account, then sign in here!",
+              "Check your email to confirm your account, then sign in here!",
               false
             );
           }
@@ -327,7 +323,7 @@
             password: password
           });
           if (error) throw error;
-          setCloudStatusMessage("Signed in! Syncing your study data...", false);
+          setCloudStatusMessage("Signed in! Syncing...", false);
         }
       } catch (err) {
         setCloudStatusMessage(err.message || "Authentication failed.", true);
@@ -338,7 +334,7 @@
 
     manualSyncNow: async function () {
       await performFullCloudMerge();
-      setCloudStatusMessage("✓ All 365-Day chapters & study logs are up to date!", false);
+      setCloudStatusMessage("✓ Synced with cloud!", false);
     },
 
     signOut: async function () {
@@ -355,11 +351,7 @@
       try {
         if (isRead) {
           await sbClient.from("user_read_chapters").upsert(
-            {
-              user_id: currentUser.id,
-              chapter_key: chapterKey,
-              read_date: dateISO
-            },
+            { user_id: currentUser.id, chapter_key: chapterKey, read_date: dateISO },
             { onConflict: "user_id,chapter_key" }
           );
         } else {
@@ -380,11 +372,7 @@
       try {
         if (markAsRead) {
           const rows = chapterKeys.map(function (k) {
-            return {
-              user_id: currentUser.id,
-              chapter_key: k,
-              read_date: dateISO
-            };
+            return { user_id: currentUser.id, chapter_key: k, read_date: dateISO };
           });
           await sbClient
             .from("user_read_chapters")
@@ -427,8 +415,8 @@
             entry_date: entry.date,
             title: entry.title,
             passage: entry.passage,
-            topic_tag: entry.topicTag || "General Exegesis",
-            minister_pattern: entry.ministerPattern || "Apostle Arome Osayi",
+            topic_tag: entry.topicTag || "Personal Study",
+            minister_pattern: entry.ministerPattern || "Personal Study",
             first_mention_lexicon: entry.firstMentionAndLexicon || "",
             christ_substance: entry.christSubstance || "",
             rhema_legislation: entry.rhemaLegislation || "",
