@@ -662,46 +662,54 @@ body {
   color: var(--accent-primary);
 }
 
-/* Collapsible Study Bible Context & Interactive Atlas Drawer */
-.chapter-context-drawer {
+/* Study Bible Book & Chapter Context Header Box */
+.study-bible-header-box {
   background: var(--bg-subtle);
   border: 1px solid var(--border-line);
-  border-radius: 14px;
-  padding: 1.15rem;
-  margin-bottom: 1.5rem;
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 1.15rem;
+  border-top: 3px solid var(--accent-primary);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.45rem;
 }
 
-.chapter-context-drawer.hidden {
+.study-bible-header-box.hidden {
   display: none;
 }
 
-.context-meta-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.38rem;
-  margin-bottom: 0.7rem;
+.study-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
 }
 
-.context-meta-tag {
-  font-size: 0.71rem;
+.study-fact-cell {
   background: var(--bg-paper);
   border: 1px solid var(--border-line);
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
-  color: var(--text-body);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
 }
 
-.context-meta-tag strong {
+.study-fact-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--accent-primary);
+  margin-bottom: 0.14rem;
+}
+
+.study-fact-val {
+  font-size: 0.8rem;
+  color: var(--text-ink);
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .context-item {
-  margin-bottom: 0.65rem;
-  font-size: 0.83rem;
-  line-height: 1.58;
+  margin-bottom: 0.68rem;
+  font-size: 0.84rem;
+  line-height: 1.62;
   color: var(--text-body);
 }
 
@@ -711,11 +719,22 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--accent-primary);
-  margin-bottom: 0.12rem;
+  margin-bottom: 0.15rem;
+}
+
+.context-map-collapsible {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-line);
+}
+
+.context-map-collapsible.hidden {
+  display: none;
 }
 
 .biblical-map-frame {
   width: 100%;
+  max-width: 680px;
   background: #0d192b;
   border: 1px solid var(--border-strong);
   border-radius: 10px;
@@ -734,6 +753,7 @@ body {
 }
 
 .map-caption-box {
+  max-width: 680px;
   background: var(--bg-paper);
   border: 1px solid var(--border-line);
   border-left: 3px solid var(--accent-lexicon);
@@ -742,6 +762,33 @@ body {
   font-size: 0.77rem;
   color: var(--text-body);
   line-height: 1.45;
+}
+
+/* Section Headings inside Scripture & Inline Study Bible Footnotes */
+.scripture-section-heading {
+  font-family: var(--font-serif-title);
+  font-size: 0.96rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--accent-primary);
+  margin: 0.85rem 0 0.25rem;
+  padding-left: 0.7rem;
+}
+
+.inline-study-bible-note {
+  margin-top: 0.48rem;
+  padding: 0.52rem 0.75rem;
+  background: var(--bg-subtle);
+  border-left: 2.5px solid var(--accent-gold);
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+body.hide-study-notes .inline-study-bible-note {
+  display: none;
 }
 
 /* BibleGateway Editorial Verse Flow */
@@ -822,13 +869,18 @@ body {
   margin-right: 0.25rem;
 }
 
-/* Side-by-Side Parallel KJV | NKJV Grid */
+/* Side-by-Side Parallel KJV | NKJV | AMPC Grid */
 .bgw-parallel-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.35rem;
+  gap: 1.25rem;
   padding: 0.7rem 0.75rem;
   border-bottom: 1px solid var(--border-line);
+}
+
+.bgw-parallel-grid.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.05rem;
 }
 
 .bgw-parallel-grid:hover {
@@ -889,7 +941,7 @@ body.hide-strongs .center-scripture-pane .strongs-token {
 
 .reflect-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.25rem;
   background: var(--bg-paper);
   border: 1px solid var(--border-line);
@@ -1318,8 +1370,9 @@ body.hide-strongs .center-scripture-pane .strongs-token {
   }
 }
 
-@media (max-width: 860px) {
-  .chapter-context-drawer {
+@media (max-width: 920px) {
+  .study-facts-grid,
+  .bgw-parallel-grid.cols-3 {
     grid-template-columns: 1fr;
   }
 }

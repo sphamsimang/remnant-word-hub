@@ -1,8 +1,8 @@
 /**
- * Remnant Word Hub — BibleGateway-Inspired 3-Column Study Bible Engine
- * Left: 365-Day Reading Plan & Finish Tracker
- * Center: Full 66-Book KJV (Strong's) & NKJV Scripture + Study Context & Chapter Map
- * Right: Insights & Reflect (Personal Reflections, Self-Built Topics & Live 14,000+ BLB Lexicon)
+ * Msimang Bible Reading — 3-Column Study Bible Workspace
+ * Left: 365-Day Reading Plan & Completion Date Tracker
+ * Center: Study Bible Context (Author, Written To, Historical Times & Tyndale Study Notes) + KJV / NKJV / Classic AMPC
+ * Right: Clean Minimal Personal Notes + 100% Verbatim Original Lexicon (BDB 1906 / Thayer's 1889 / Strong's 1890)
  */
 
 (function () {
@@ -11,18 +11,22 @@
     READ_CHAPTERS: "rwh_read_chapters_v1",
     STUDY_LOGS: "rwh_study_logs_v1",
     THEME: "rwh_theme_v2",
-    FONT_SIZE: "rwh_font_size_v1"
+    FONT_SIZE: "rwh_font_size_v1",
+    VERSION_MODE: "mbr_version_mode_v1"
   };
 
   const chapterApiCache = {};
-  const strongsApiCache = {};
+  const ampcBookCache = {};
+  const studyNotesCache = {};
+  const lexiconCache = {};
+  let searchDebounceTimer = null;
 
   let state = {
-    mobilePane: "scripture", // plan | scripture | reflect
+    mobilePane: "scripture",
     showLeftPane: true,
     showRightPane: true,
-    reflectTab: "compose", // compose | notes | lexicon
-    notesScope: "all", // all | book | chapter
+    reflectTab: "notes", // notes | lexicon
+    notesScope: "all", // all | chapter
     activeTopicFilter: "",
 
     startDateISO: "",
@@ -35,19 +39,21 @@
     currentBook: "John",
     currentChapter: 1,
     highlightedVerse: null,
-    readerMode: "parallel", // nkjv | kjv | parallel
+    readerMode: "all3", // nkjv | kjv | ampc | nkjv_ampc | kjv_nkjv | kjv_ampc | all3
+    showStudyContext: true,
+    showInlineStudyNotes: true,
     showStrongs: true,
-    showContextMap: false,
-    fontSizeRem: 1.08,
+    showMap: false,
+    fontSizeRem: 1.06,
 
     activeStrongsCode: "G3056",
-    activeLexiconSummary: null,
+    activeLexiconPlainSummary: "",
     pickerTestament: "ALL",
     pickerSelectedBook: "John",
     studyLogs: []
   };
 
-  // Date Utilities
+  // Date Helpers
   function toLocalISOString(dateObj) {
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -73,7 +79,6 @@
     return dateObj.toLocaleDateString("en-US", opts);
   }
 
-  // Build flat canonical list of all 1,189 chapters
   function buildAllCanonicalChapters() {
     const list = [];
     window.BIBLE_BOOKS.forEach((b) => {
@@ -83,6 +88,7 @@
           bookId: b.id,
           book: b.name,
           abbr: b.abbr,
+          usfm: b.usfm,
           chapter: c,
           testament: b.testament,
           category: b.category,
@@ -150,7 +156,6 @@
 
     try {
       const savedLogs = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDY_LOGS) || "[]");
-      // Strip out any old pre-canned demo seeds so notes feed 100% from what the user studies themselves
       state.studyLogs = Array.isArray(savedLogs)
         ? savedLogs.filter((item) => item && !String(item.id).startsWith("seed-log-"))
         : [];
@@ -162,16 +167,22 @@
     const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || "light";
     applyThemeDOM(savedTheme);
 
-    const savedFont = parseFloat(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || "1.08");
+    const savedFont = parseFloat(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || "1.06");
     if (!isNaN(savedFont) && savedFont >= 0.85 && savedFont <= 1.55) {
       state.fontSizeRem = savedFont;
       document.documentElement.style.setProperty("--scripture-size", `${savedFont}rem`);
     }
 
+    const savedVer = localStorage.getItem(STORAGE_KEYS.VERSION_MODE);
+    if (savedVer) {
+      state.readerMode = savedVer;
+      const sel = document.getElementById("header-version-select");
+      if (sel) sel.value = savedVer;
+    }
+
     state.yearPlan = generate365DayPlan(state.startDateISO);
     state.selectedDayNumber = getCurrentPlanDayNumber();
 
-    // Default passage input in Reflect composer
     const passageInput = document.getElementById("log-passage-input");
     if (passageInput && !passageInput.value) {
       passageInput.value = `${state.currentBook} ${state.currentChapter}`;
@@ -205,7 +216,7 @@
   }
 
   // ==========================================================================
-  // WORKSPACE PANE & HEADER CONTROLS
+  // WORKSPACE PANE & HEADER UTILITIES
   // ==========================================================================
 
   window.toggleDesktopPane = function (side) {
@@ -248,21 +259,17 @@
     const next = isDark ? "light" : "dark";
     applyThemeDOM(next);
     localStorage.setItem(STORAGE_KEYS.THEME, next);
-    if (window.RWH_CLOUD) {
-      window.RWH_CLOUD.syncSettings();
-    }
+    if (window.RWH_CLOUD) window.RWH_CLOUD.syncSettings();
   };
 
   window.adjustScriptureFontSize = function (delta) {
     state.fontSizeRem = Math.min(1.52, Math.max(0.86, +(state.fontSizeRem + delta * 0.08).toFixed(2)));
     document.documentElement.style.setProperty("--scripture-size", `${state.fontSizeRem}rem`);
     localStorage.setItem(STORAGE_KEYS.FONT_SIZE, String(state.fontSizeRem));
-    if (window.RWH_CLOUD) {
-      window.RWH_CLOUD.syncSettings();
-    }
+    if (window.RWH_CLOUD) window.RWH_CLOUD.syncSettings();
   };
 
-  // Smart BibleGateway-style Passage Lookup (e.g., "Rom 8:29", "1 Cor 13", "Ps 23", "John 3:16")
+  // Passage Search Parser
   const COMMON_ALIASES = {
     gen: "Genesis", ge: "Genesis", exo: "Exodus", ex: "Exodus", lev: "Leviticus",
     num: "Numbers", deu: "Deuteronomy", dt: "Deuteronomy", jos: "Joshua", josh: "Joshua",
@@ -286,7 +293,6 @@
   function parsePassageQuery(raw) {
     const cleaned = (raw || "").trim().replace(/\s+/g, " ");
     if (!cleaned) return null;
-
     const match = cleaned.match(/^([1-3]?\s*[a-zA-Z\s]+?)(?:\s+(\d+)(?::(\d+))?)?$/);
     if (!match) return null;
 
@@ -327,15 +333,17 @@
       state.highlightedVerse = parsed.verse;
       if (input) input.value = "";
       window.setMobilePane("scripture");
+      renderAllTrackerViews();
       renderBibleReader().then(() => {
         if (parsed.verse) {
           window.selectVerseForReflection(parsed.verse, false);
-          const vEl = document.getElementById(`verse-block-${parsed.verse}`);
-          if (vEl) vEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          document.getElementById(`verse-block-${parsed.verse}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
         }
       });
     } else {
-      // Open Book Picker with search prefilled
       window.openBookPickerModal();
       const pickerSearch = document.getElementById("picker-book-search");
       if (pickerSearch) {
@@ -346,7 +354,7 @@
   };
 
   // ==========================================================================
-  // LEFT PANE: 365-DAY READING PLAN & DYNAMIC FINISH FORECASTER
+  // LEFT PANE: 365-DAY READING PLAN & COMPLETION TRACKER
   // ==========================================================================
 
   function computeCompletionForecast() {
@@ -401,10 +409,8 @@
       percentComplete,
       completedTilesCount,
       daysElapsed,
-      chapterDeltaVsSchedule,
       daysAheadOrBehind,
-      effectiveVelocity: effectiveVelocity.toFixed(1),
-      projectedDaysRemaining
+      effectiveVelocity: effectiveVelocity.toFixed(1)
     };
   }
 
@@ -470,9 +476,7 @@
     state.yearPlan = generate365DayPlan(newISO);
     state.selectedDayNumber = getCurrentPlanDayNumber();
     renderAllTrackerViews();
-    if (window.RWH_CLOUD) {
-      window.RWH_CLOUD.syncSettings();
-    }
+    if (window.RWH_CLOUD) window.RWH_CLOUD.syncSettings();
   };
 
   function renderAllTrackerViews() {
@@ -486,7 +490,6 @@
     const mobPct = document.getElementById("mob-plan-pct");
     if (mobPct) mobPct.textContent = `${Math.round(parseFloat(forecast.percentComplete))}%`;
 
-    // 1. Compact Summary & Projected Finish Card
     const summaryEl = document.getElementById("tracker-summary-panel");
     if (summaryEl) {
       const pctNum = Math.min(100, parseFloat(forecast.percentComplete) || 0);
@@ -498,11 +501,11 @@
       if (forecast.chaptersReadCount === 0) {
         scheduleBadge = `Target Finish: <strong>${formatReadableDate(forecast.targetFinishDate)}</strong>`;
       } else if (forecast.daysAheadOrBehind > 0) {
-        scheduleBadge = `<strong>${forecast.daysAheadOrBehind}d ahead</strong> • Projected Finish: <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong>`;
+        scheduleBadge = `<strong>${forecast.daysAheadOrBehind}d ahead</strong> · Projected Finish: <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong>`;
       } else if (forecast.daysAheadOrBehind === 0) {
-        scheduleBadge = `<strong>On track</strong> • Projected Finish: <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong>`;
+        scheduleBadge = `<strong>On track</strong> · Projected Finish: <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong>`;
       } else {
-        scheduleBadge = `Current pace finishes <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong> (${Math.abs(forecast.daysAheadOrBehind)}d behind 365 target)`;
+        scheduleBadge = `Projected Finish: <strong>${formatReadableDate(forecast.projectedFinishDate)}</strong> (${Math.abs(forecast.daysAheadOrBehind)}d behind target)`;
       }
 
       summaryEl.innerHTML = `
@@ -532,7 +535,6 @@
       `;
     }
 
-    // 2. Active Day Assignment Card
     const todayCard = document.getElementById("today-assignment-panel");
     if (todayCard && selectedTile) {
       const readInTile = selectedTile.chapters.filter((ch) => Boolean(state.readChapters[ch.key])).length;
@@ -674,7 +676,7 @@
   }
 
   // ==========================================================================
-  // CENTER PANE: BIBLEGATEWAY EDITORIAL SCRIPTURE + CONTEXT & MAP
+  // CENTER PANE: STUDY BIBLE CONTEXT + KJV / NKJV / CLASSIC AMPC + STUDY NOTES
   // ==========================================================================
 
   window.openBookPickerModal = function () {
@@ -777,16 +779,30 @@
 
   window.setReaderVersionMode = function (mode) {
     state.readerMode = mode;
+    localStorage.setItem(STORAGE_KEYS.VERSION_MODE, mode);
     const sel = document.getElementById("header-version-select");
     if (sel && sel.value !== mode) sel.value = mode;
-    const parBtn = document.getElementById("opt-parallel-btn");
-    if (parBtn) parBtn.classList.toggle("active", mode === "parallel");
     renderBibleReader();
   };
 
-  window.toggleParallelQuick = function () {
-    const next = state.readerMode === "parallel" ? "nkjv" : "parallel";
-    window.setReaderVersionMode(next);
+  window.toggleStudyContextBox = function () {
+    state.showStudyContext = !state.showStudyContext;
+    document.getElementById("reader-study-context-box")?.classList.toggle("hidden", !state.showStudyContext);
+    const btn = document.getElementById("opt-context-btn");
+    if (btn) {
+      btn.classList.toggle("active", state.showStudyContext);
+      btn.textContent = state.showStudyContext ? "📖 Chapter Context: ON" : "📖 Chapter Context: OFF";
+    }
+  };
+
+  window.toggleInlineStudyNotes = function () {
+    state.showInlineStudyNotes = !state.showInlineStudyNotes;
+    document.body.classList.toggle("hide-study-notes", !state.showInlineStudyNotes);
+    const btn = document.getElementById("opt-study-notes-btn");
+    if (btn) {
+      btn.classList.toggle("active", state.showInlineStudyNotes);
+      btn.textContent = state.showInlineStudyNotes ? "📑 Study Bible Notes: ON" : "📑 Study Bible Notes: OFF";
+    }
   };
 
   window.toggleStrongsVisibility = function () {
@@ -795,16 +811,14 @@
     const btn = document.getElementById("opt-strongs-btn");
     if (btn) {
       btn.classList.toggle("active", state.showStrongs);
-      btn.textContent = state.showStrongs ? "🔎 Strong's Numbers: ON" : "🔎 Strong's Numbers: OFF";
+      btn.textContent = state.showStrongs ? "🔎 Strong's: ON" : "🔎 Strong's: OFF";
     }
   };
 
-  window.toggleContextMapPanel = function () {
-    state.showContextMap = !state.showContextMap;
-    const panel = document.getElementById("reader-study-context-map");
-    const btn = document.getElementById("opt-context-map-btn");
-    if (panel) panel.classList.toggle("hidden", !state.showContextMap);
-    if (btn) btn.classList.toggle("active", state.showContextMap);
+  window.toggleChapterMap = function () {
+    state.showMap = !state.showMap;
+    document.getElementById("chapter-map-collapsible")?.classList.toggle("hidden", !state.showMap);
+    document.getElementById("opt-map-btn")?.classList.toggle("active", state.showMap);
   };
 
   function normalizeBollsStrongs(text, testament) {
@@ -825,72 +839,165 @@
   function formatTextWithStrongsTokens(rawText) {
     if (!rawText) return "";
     return rawText.replace(/\{([HG]\d+)\}/g, function (_, code) {
-      const lex = window.STRONGS_LEXICON && window.STRONGS_LEXICON[code];
       const activeClass = state.activeStrongsCode === code ? "active-token" : "";
-      const tooltip = lex ? `${lex.original} (${lex.translit}) — ${lex.definition}` : `Inspect ${code} in Lexicon`;
-      return `<span class="strongs-token ${activeClass}" onclick="event.stopPropagation(); window.inspectStrongs('${code}', true)" title="${tooltip.replace(/"/g, "&quot;")}">${code}</span>`;
+      return `<span class="strongs-token ${activeClass}" onclick="event.stopPropagation(); window.inspectStrongs('${code}', true)" title="Open ${code} in Original BDB/Thayer's Lexicon">${code}</span>`;
     });
   }
 
-  async function loadFullChapterKjvAndNkjv(bookName, chapterNum) {
+  async function loadAmpcBook(bookId) {
+    if (ampcBookCache[bookId]) return ampcBookCache[bookId];
+    try {
+      const resp = await fetch(`data/ampc/${bookId}.json`);
+      if (!resp.ok) throw new Error("AMPC fetch error");
+      const json = await resp.json();
+      ampcBookCache[bookId] = json;
+      return json;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  // Load Scholarly Study Bible Notes (Tyndale Open Study Notes / Jamieson-Fausset-Brown)
+  async function loadChapterStudyCommentary(bookMeta, chapterNum) {
+    const cacheKey = `${bookMeta.usfm}_${chapterNum}`;
+    if (studyNotesCache[cacheKey]) return studyNotesCache[cacheKey];
+
+    const commentaryId = bookMeta.usfm === "JDG" ? "jamieson-fausset-brown" : "tyndale";
+    try {
+      const resp = await fetch(
+        `https://bible.helloao.org/api/c/${commentaryId}/${bookMeta.usfm}/${chapterNum}.json`
+      );
+      if (!resp.ok) throw new Error("Commentary fetch failed");
+      const data = await resp.json();
+
+      const verseNotes = {};
+      let chapterOpeningSummary = "";
+
+      const contentArr = (data.chapter && data.chapter.content) || [];
+      contentArr.forEach((item) => {
+        if (item.type === "verse" && Array.isArray(item.content)) {
+          const joined = item.content
+            .map((part) => (typeof part === "string" ? part : part.text || ""))
+            .filter(Boolean);
+          if (joined.length > 0) {
+            // If verse 1 starts with a range overview (e.g. "1:1-18 ..."), surface it in the Chapter Context box too!
+            if (item.number === 1 && !chapterOpeningSummary) {
+              chapterOpeningSummary = joined[0];
+            }
+            verseNotes[item.number] = joined;
+          }
+        }
+      });
+
+      const parsed = {
+        sourceName: commentaryId === "tyndale" ? "Tyndale Open Study Notes" : "Jamieson-Fausset-Brown Study Commentary",
+        bookIntro: (data.book && data.book.introduction) || "",
+        chapterIntro: (data.chapter && data.chapter.introduction) || chapterOpeningSummary,
+        verseNotes
+      };
+      studyNotesCache[cacheKey] = parsed;
+      return parsed;
+    } catch (e) {
+      const empty = { sourceName: "Study Bible Context", bookIntro: "", chapterIntro: "", verseNotes: {} };
+      return empty;
+    }
+  }
+
+  // Load KJV (Strong's), NKJV & Classic AMPC in Parallel
+  async function loadFullChapterTranslations(bookName, chapterNum) {
     const chapterKey = `${bookName}_${chapterNum}`;
     if (chapterApiCache[chapterKey]) return chapterApiCache[chapterKey];
 
     const bookMeta = window.BIBLE_BOOKS.find((b) => b.name === bookName) || window.BIBLE_BOOKS[0];
-    const curatedMeta = window.CURATED_CHAPTERS && window.CURATED_CHAPTERS[chapterKey];
 
     try {
-      const [kjvResp, nkjvResp] = await Promise.all([
-        fetch(`https://bolls.life/get-chapter/KJV/${bookMeta.id}/${chapterNum}/`),
-        fetch(`https://bolls.life/get-chapter/NKJV/${bookMeta.id}/${chapterNum}/`)
+      const [kjvResp, nkjvResp, ampcBook] = await Promise.all([
+        fetch(`https://bolls.life/get-chapter/KJV/${bookMeta.id}/${chapterNum}/`).catch(() => null),
+        fetch(`https://bolls.life/get-chapter/NKJV/${bookMeta.id}/${chapterNum}/`).catch(() => null),
+        loadAmpcBook(bookMeta.id)
       ]);
 
-      if (!kjvResp.ok || !nkjvResp.ok) throw new Error("API status error");
+      const kjvArr = kjvResp && kjvResp.ok ? await kjvResp.json() : [];
+      const nkjvArr = nkjvResp && nkjvResp.ok ? await nkjvResp.json() : [];
+      const ampcChapterArr = (ampcBook && ampcBook[String(chapterNum)]) || [];
 
-      const [kjvArr, nkjvArr] = await Promise.all([kjvResp.json(), nkjvResp.json()]);
-      if (!Array.isArray(kjvArr) || kjvArr.length === 0) throw new Error("Empty chapter");
+      const kjvByV = {};
+      kjvArr.forEach((v) => {
+        kjvByV[v.verse] = normalizeBollsStrongs(v.text, bookMeta.testament);
+      });
 
-      const nkjvByVerse = {};
-      if (Array.isArray(nkjvArr)) {
-        nkjvArr.forEach((v) => {
-          nkjvByVerse[v.verse] = cleanHtmlTags(v.text);
-        });
+      const nkjvByV = {};
+      nkjvArr.forEach((v) => {
+        nkjvByV[v.verse] = cleanHtmlTags(v.text);
+      });
+
+      const ampcByV = {};
+      const headingsByV = {};
+      ampcChapterArr.forEach((v) => {
+        ampcByV[v.v] = v.t;
+        if (v.h) headingsByV[v.v] = v.h;
+      });
+
+      const maxVerse = Math.max(
+        kjvArr.length ? kjvArr[kjvArr.length - 1].verse : 0,
+        nkjvArr.length ? nkjvArr[nkjvArr.length - 1].verse : 0,
+        ampcChapterArr.length ? ampcChapterArr[ampcChapterArr.length - 1].v : 0
+      );
+
+      const mergedVerses = [];
+      for (let v = 1; v <= maxVerse; v++) {
+        if (kjvByV[v] || nkjvByV[v] || ampcByV[v]) {
+          mergedVerses.push({
+            v,
+            heading: headingsByV[v] || "",
+            kjv: kjvByV[v] || "",
+            nkjv: nkjvByV[v] || "",
+            ampc: ampcByV[v] || ""
+          });
+        }
       }
-
-      const mergedVerses = kjvArr.map((vObj) => ({
-        v: vObj.verse,
-        kjv: normalizeBollsStrongs(vObj.text, bookMeta.testament),
-        nkjv: nkjvByVerse[vObj.verse] || cleanHtmlTags(vObj.text)
-      }));
 
       const result = {
         book: bookName,
         chapter: chapterNum,
+        firstHeading: headingsByV[1] || "",
         verses: mergedVerses
       };
-
-      chapterApiCache[chapterKey] = result;
+      if (mergedVerses.length > 0) {
+        chapterApiCache[chapterKey] = result;
+      }
       return result;
     } catch (err) {
-      if (curatedMeta) return curatedMeta;
       return {
         book: bookName,
         chapter: chapterNum,
-        verses: [
-          {
-            v: 1,
-            kjv: `Connect to the internet to load ${bookName} ${chapterNum} (KJV & NKJV).`,
-            nkjv: `Connect to the internet to load ${bookName} ${chapterNum} (KJV & NKJV).`
-          }
-        ]
+        firstHeading: "",
+        verses: []
       };
     }
   }
 
   function getVersionFullName(mode) {
-    if (mode === "nkjv") return "New King James Version (NKJV)";
-    if (mode === "kjv") return "King James Version (KJV with Strong's)";
-    return "Parallel Study: King James Version (KJV) & New King James Version (NKJV)";
+    const names = {
+      nkjv: "New King James Version (NKJV)",
+      kjv: "King James Version (KJV with Strong's Numbers)",
+      ampc: "Amplified Bible, Classic Edition (AMPC)",
+      nkjv_ampc: "Parallel: NKJV & Amplified Bible, Classic Edition (AMPC)",
+      kjv_nkjv: "Parallel: King James Version (KJV) & New King James Version (NKJV)",
+      kjv_ampc: "Parallel: King James Version (KJV) & Classic Amplified (AMPC)",
+      all3: "Parallel Study: KJV · NKJV · Classic Amplified (AMPC)"
+    };
+    return names[mode] || names.all3;
+  }
+
+  function getActiveColumnsList(mode) {
+    if (mode === "nkjv") return ["nkjv"];
+    if (mode === "kjv") return ["kjv"];
+    if (mode === "ampc") return ["ampc"];
+    if (mode === "nkjv_ampc") return ["nkjv", "ampc"];
+    if (mode === "kjv_nkjv") return ["kjv", "nkjv"];
+    if (mode === "kjv_ampc") return ["kjv", "ampc"];
+    return ["kjv", "nkjv", "ampc"];
   }
 
   function renderBibleReaderHeaderOnly() {
@@ -931,120 +1038,6 @@
     }
   }
 
-  // Click any verse to populate the Right-Hand "Insights & Reflect" composer
-  window.selectVerseForReflection = function (verseNum, switchOnMobile = true) {
-    state.highlightedVerse = Number(verseNum);
-    const ref = `${state.currentBook} ${state.currentChapter}:${verseNum}`;
-
-    document.querySelectorAll(".bgw-verse-block").forEach((el) => {
-      el.classList.toggle("selected-for-reflect", el.id === `verse-block-${verseNum}`);
-    });
-
-    const passageInput = document.getElementById("log-passage-input");
-    if (passageInput) passageInput.value = ref;
-
-    window.switchReflectTab("compose");
-    if (switchOnMobile && window.innerWidth <= 1180) {
-      window.setMobilePane("reflect");
-    }
-    const titleInput = document.getElementById("log-title-input");
-    if (titleInput && !titleInput.value) titleInput.focus();
-  };
-
-  function verseHasSavedNote(bookName, chapterNum, verseNum) {
-    const exactPrefix = `${bookName} ${chapterNum}:${verseNum}`.toLowerCase();
-    return state.studyLogs.some((item) =>
-      (item.passage || "").toLowerCase().includes(exactPrefix)
-    );
-  }
-
-  async function renderBibleReader() {
-    const bookName = state.currentBook;
-    const chapterNum = state.currentChapter;
-    const chapterKey = `${bookName}_${chapterNum}`;
-
-    renderBibleReaderHeaderOnly();
-    renderStudyBibleContextAndMap(bookName, chapterNum);
-
-    // Keep Reflect passage input synced to current chapter if user hasn't typed a draft
-    const editId = document.getElementById("log-edit-id")?.value;
-    const titleDraft = document.getElementById("log-title-input")?.value;
-    const bodyDraft = document.getElementById("log-christ-input")?.value;
-    const passageInput = document.getElementById("log-passage-input");
-    if (passageInput && !editId && !titleDraft && !bodyDraft) {
-      passageInput.value = state.highlightedVerse
-        ? `${bookName} ${chapterNum}:${state.highlightedVerse}`
-        : `${bookName} ${chapterNum}`;
-    }
-
-    const versesEl = document.getElementById("reader-verses-container");
-    if (versesEl && !chapterApiCache[chapterKey]) {
-      versesEl.innerHTML = `<div class="loading-box">Loading ${bookName} ${chapterNum}...</div>`;
-    }
-
-    const chapterData = await loadFullChapterKjvAndNkjv(bookName, chapterNum);
-    if (state.currentBook !== bookName || state.currentChapter !== chapterNum) return;
-
-    if (versesEl) {
-      if (state.readerMode === "parallel") {
-        versesEl.innerHTML = chapterData.verses
-          .map((vObj) => {
-            const isSel = state.highlightedVerse === vObj.v;
-            const hasNote = verseHasSavedNote(bookName, chapterNum, vObj.v);
-            return `
-              <div id="verse-block-${vObj.v}" class="bgw-verse-block bgw-parallel-grid ${isSel ? "selected-for-reflect" : ""}">
-                <div>
-                  <div class="parallel-col-label">KJV</div>
-                  <div class="bgw-verse-text">
-                    ${hasNote ? '<span class="verse-has-note-dot" title="You have a reflection on this verse"></span>' : ""}
-                    <sup class="bgw-verse-sup" onclick="window.selectVerseForReflection(${vObj.v}, true)">${vObj.v}</sup>
-                    ${formatTextWithStrongsTokens(vObj.kjv)}
-                  </div>
-                </div>
-                <div>
-                  <button type="button" class="verse-reflect-trigger" onclick="window.selectVerseForReflection(${vObj.v}, true)">
-                    ✍️ Reflect
-                  </button>
-                  <div class="parallel-col-label">NKJV</div>
-                  <div class="bgw-verse-text">
-                    <sup class="bgw-verse-sup" onclick="window.selectVerseForReflection(${vObj.v}, true)">${vObj.v}</sup>
-                    ${formatTextWithStrongsTokens(vObj.nkjv)}
-                  </div>
-                </div>
-              </div>
-            `;
-          })
-          .join("");
-      } else {
-        const isKjv = state.readerMode === "kjv";
-        versesEl.innerHTML = chapterData.verses
-          .map((vObj) => {
-            const isSel = state.highlightedVerse === vObj.v;
-            const hasNote = verseHasSavedNote(bookName, chapterNum, vObj.v);
-            const rawTxt = isKjv ? vObj.kjv : vObj.nkjv;
-            return `
-              <div id="verse-block-${vObj.v}" class="bgw-verse-block ${isSel ? "selected-for-reflect" : ""}">
-                <button type="button" class="verse-reflect-trigger" onclick="window.selectVerseForReflection(${vObj.v}, true)">
-                  ✍️ Reflect
-                </button>
-                <span class="bgw-verse-text">
-                  ${hasNote ? '<span class="verse-has-note-dot" title="You have a reflection on this verse"></span>' : ""}
-                  <sup class="bgw-verse-sup" onclick="window.selectVerseForReflection(${vObj.v}, true)">${vObj.v}</sup>
-                  ${formatTextWithStrongsTokens(rawTxt)}
-                </span>
-              </div>
-            `;
-          })
-          .join("");
-      }
-    }
-
-    if (state.notesScope !== "all") {
-      window.renderStudyLogs();
-    }
-  }
-
-  // Interactive Study Bible Context & Chapter Atlas
   window.inspectMapLocation = function (locId) {
     const loc = window.BIBLICAL_LOCATIONS && window.BIBLICAL_LOCATIONS[locId];
     if (!loc) return;
@@ -1061,9 +1054,11 @@
     }
   };
 
-  function renderStudyBibleContextAndMap(bookName, chapterNum) {
-    const container = document.getElementById("reader-study-context-map");
-    if (!container || typeof window.getChapterStudyAndMapData !== "function") return;
+  function renderStudyBibleContextBox(bookName, chapterNum, chapterSuperscription, commentaryData) {
+    const box = document.getElementById("reader-study-context-box");
+    if (!box || typeof window.getChapterStudyAndMapData !== "function") return;
+
+    box.classList.toggle("hidden", !state.showStudyContext);
 
     const info = window.getChapterStudyAndMapData(bookName, chapterNum);
     const activeLoc = info.activeLocation;
@@ -1071,6 +1066,17 @@
     const polylinePoints = routeLocs.map((l) => `${l.svgX},${l.svgY}`).join(" ");
     const allLocs = Object.values(window.BIBLICAL_LOCATIONS || {});
     const routeIds = new Set(routeLocs.map((r) => r.id));
+
+    // If chapter has a specific superscription (e.g., "A Psalm of David." or "A Psalm of Asaph."), highlight it in Who Wrote It
+    let authorDisplay = info.author;
+    if (chapterSuperscription && (bookName === "Psalms" || bookName === "Proverbs")) {
+      authorDisplay = `${chapterSuperscription} (${info.author})`;
+    }
+
+    const chapterOverviewText =
+      (commentaryData && commentaryData.chapterIntro) ||
+      info.chapterSpecificOverride ||
+      info.bookOverview;
 
     const pinsSvg = allLocs
       .map((loc) => {
@@ -1103,37 +1109,44 @@
       })
       .join("");
 
-    container.innerHTML = `
-      <div>
-        <div class="pane-eyebrow">Study Bible Context • ${info.bookName} ${info.chapterNum}</div>
-        <h3 class="pane-title" style="margin-bottom:0.55rem;">Historical & Redemptive Context</h3>
-
-        <div class="context-meta-tags">
-          <span class="context-meta-tag"><strong>Author:</strong> ${info.author}</span>
-          <span class="context-meta-tag"><strong>Date:</strong> ${info.dateWritten}</span>
-          <span class="context-meta-tag"><strong>Setting:</strong> ${info.dispensation}</span>
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;">
+        <div>
+          <div class="pane-eyebrow">Study Bible Introduction & Context</div>
+          <h3 class="pane-title" style="font-size:1.02rem;">Context of ${bookName} & Chapter ${chapterNum}</h3>
         </div>
+        <button type="button" class="btn-secondary" style="padding:0.24rem 0.58rem;font-size:0.72rem;" onclick="window.toggleStudyContextBox()">
+          Hide
+        </button>
+      </div>
 
-        <div class="context-item">
-          <div class="context-item-label">Historical Setting</div>
-          <div>${info.historicalSetting}</div>
+      <div class="study-facts-grid">
+        <div class="study-fact-cell">
+          <div class="study-fact-label">✍️ Who Wrote It</div>
+          <div class="study-fact-val">${authorDisplay}</div>
         </div>
-
-        <div class="context-item">
-          <div class="context-item-label">Christocentric Thread</div>
-          <div>${info.christocentricThread}</div>
+        <div class="study-fact-cell">
+          <div class="study-fact-label">👥 Written To (Audience)</div>
+          <div class="study-fact-val">${info.writtenTo}</div>
         </div>
-
-        <div class="context-item" style="margin-bottom:0;">
-          <div class="context-item-label">Study Key</div>
-          <div>${info.apostolicKey}</div>
+        <div class="study-fact-cell">
+          <div class="study-fact-label">⏳ Date & Place</div>
+          <div class="study-fact-val">${info.dateWritten} · ${activeLoc.name.split(" (")[0]}</div>
         </div>
       </div>
 
-      <div>
-        <div class="pane-eyebrow">Chapter Geography</div>
-        <h3 class="pane-title" style="font-size:0.95rem;margin-bottom:0.35rem;">${info.mapCaption}</h3>
+      <div class="context-item">
+        <div class="context-item-label">🏛️ Historical & Cultural Context of the Times</div>
+        <div>${info.timesContext}</div>
+      </div>
 
+      <div class="context-item" style="margin-bottom:0;">
+        <div class="context-item-label">📖 ${bookName} ${chapterNum} Chapter Context</div>
+        <div>${chapterOverviewText}</div>
+      </div>
+
+      <div id="chapter-map-collapsible" class="context-map-collapsible ${state.showMap ? "" : "hidden"}">
+        <div class="context-item-label">${info.mapCaption} (Click any map pin)</div>
         <div class="biblical-map-frame">
           <svg viewBox="0 0 820 410" class="biblical-svg-map" role="img" aria-label="Biblical Map">
             <rect width="820" height="410" fill="#0b192e" />
@@ -1155,7 +1168,6 @@
             ${pinsSvg}
           </svg>
         </div>
-
         <div id="active-map-loc-detail" class="map-caption-box">
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.2rem;">
             <strong>📍 ${activeLoc.name} (${activeLoc.ancientName})</strong>
@@ -1168,8 +1180,176 @@
     `;
   }
 
+  window.selectVerseForReflection = function (verseNum, switchOnMobile = true) {
+    state.highlightedVerse = Number(verseNum);
+    const ref = `${state.currentBook} ${state.currentChapter}:${verseNum}`;
+
+    document.querySelectorAll(".bgw-verse-block").forEach((el) => {
+      el.classList.toggle("selected-for-reflect", el.id === `verse-block-${verseNum}`);
+    });
+
+    const passageInput = document.getElementById("log-passage-input");
+    if (passageInput) passageInput.value = ref;
+
+    window.switchReflectTab("notes");
+    if (switchOnMobile && window.innerWidth <= 1180) {
+      window.setMobilePane("reflect");
+    }
+    document.getElementById("log-body-input")?.focus();
+  };
+
+  function verseHasSavedNote(bookName, chapterNum, verseNum) {
+    const exactPrefix = `${bookName} ${chapterNum}:${verseNum}`.toLowerCase();
+    return state.studyLogs.some((item) =>
+      (item.passage || "").toLowerCase().includes(exactPrefix)
+    );
+  }
+
+  async function renderBibleReader() {
+    const bookName = state.currentBook;
+    const chapterNum = state.currentChapter;
+    const chapterKey = `${bookName}_${chapterNum}`;
+    const bookMeta = window.BIBLE_BOOKS.find((b) => b.name === bookName) || window.BIBLE_BOOKS[0];
+
+    renderBibleReaderHeaderOnly();
+    renderStudyBibleContextBox(bookName, chapterNum, "", null);
+
+    // Sync default passage pill in composer if user isn't currently editing
+    const editId = document.getElementById("log-edit-id")?.value;
+    const bodyDraft = document.getElementById("log-body-input")?.value;
+    const passageInput = document.getElementById("log-passage-input");
+    if (passageInput && !editId && !bodyDraft) {
+      passageInput.value = state.highlightedVerse
+        ? `${bookName} ${chapterNum}:${state.highlightedVerse}`
+        : `${bookName} ${chapterNum}`;
+    }
+
+    const versesEl = document.getElementById("reader-verses-container");
+    if (versesEl && !chapterApiCache[chapterKey]) {
+      versesEl.innerHTML = `<div class="loading-box">Loading ${bookName} ${chapterNum}...</div>`;
+    }
+
+    const [chapterData, commentaryData] = await Promise.all([
+      loadFullChapterTranslations(bookName, chapterNum),
+      loadChapterStudyCommentary(bookMeta, chapterNum)
+    ]);
+
+    if (state.currentBook !== bookName || state.currentChapter !== chapterNum) return;
+
+    // Re-render Study Context Box now with chapter superscription & Tyndale/JFB chapter context
+    renderStudyBibleContextBox(bookName, chapterNum, chapterData.firstHeading, commentaryData);
+
+    const cols = getActiveColumnsList(state.readerMode);
+    const colLabels = {
+      kjv: "KJV",
+      nkjv: "NKJV",
+      ampc: "AMPC (Classic)"
+    };
+
+    if (versesEl) {
+      if (chapterData.verses.length === 0) {
+        versesEl.innerHTML = `<div class="loading-box">Unable to load ${bookName} ${chapterNum}. Please check your internet connection.</div>`;
+      } else if (cols.length > 1) {
+        const gridColsClass = cols.length === 3 ? "cols-3" : "";
+        versesEl.innerHTML = chapterData.verses
+          .map((vObj) => {
+            const isSel = state.highlightedVerse === vObj.v;
+            const hasNote = verseHasSavedNote(bookName, chapterNum, vObj.v);
+            const vStudyNotes = commentaryData.verseNotes[vObj.v];
+
+            const headingHtml = vObj.heading
+              ? `<div class="scripture-section-heading">${vObj.heading}</div>`
+              : "";
+
+            const colsHtml = cols
+              .map((colKey, idx) => {
+                const isLast = idx === cols.length - 1;
+                const rawText = vObj[colKey] || "";
+                const renderedText =
+                  colKey === "kjv" ? formatTextWithStrongsTokens(rawText) : rawText;
+
+                return `
+                  <div>
+                    ${
+                      isLast
+                        ? `<button type="button" class="verse-reflect-trigger" onclick="window.selectVerseForReflection(${vObj.v}, true)">+ Note</button>`
+                        : ""
+                    }
+                    <div class="parallel-col-label">${colLabels[colKey]}</div>
+                    <div class="bgw-verse-text">
+                      ${idx === 0 && hasNote ? '<span class="verse-has-note-dot" title="Saved note on this verse"></span>' : ""}
+                      <sup class="bgw-verse-sup" onclick="window.selectVerseForReflection(${vObj.v}, true)">${vObj.v}</sup>
+                      ${renderedText}
+                    </div>
+                  </div>
+                `;
+              })
+              .join("");
+
+            const studyNoteHtml = vStudyNotes
+              ? `<div class="inline-study-bible-note" style="grid-column: 1 / -1;">
+                   <strong style="color:var(--accent-gold);font-size:0.71rem;text-transform:uppercase;letter-spacing:0.04em;">Study Note (${commentaryData.sourceName}):</strong>
+                   <div style="margin-top:0.15rem;">${vStudyNotes.join("<br><br>")}</div>
+                 </div>`
+              : "";
+
+            return `
+              ${headingHtml}
+              <div id="verse-block-${vObj.v}" class="bgw-verse-block bgw-parallel-grid ${gridColsClass} ${isSel ? "selected-for-reflect" : ""}">
+                ${colsHtml}
+                ${studyNoteHtml}
+              </div>
+            `;
+          })
+          .join("");
+      } else {
+        const singleKey = cols[0];
+        versesEl.innerHTML = chapterData.verses
+          .map((vObj) => {
+            const isSel = state.highlightedVerse === vObj.v;
+            const hasNote = verseHasSavedNote(bookName, chapterNum, vObj.v);
+            const rawTxt = vObj[singleKey] || "";
+            const renderedTxt =
+              singleKey === "kjv" ? formatTextWithStrongsTokens(rawTxt) : rawTxt;
+            const vStudyNotes = commentaryData.verseNotes[vObj.v];
+
+            const headingHtml = vObj.heading
+              ? `<div class="scripture-section-heading">${vObj.heading}</div>`
+              : "";
+
+            const studyNoteHtml = vStudyNotes
+              ? `<div class="inline-study-bible-note">
+                   <strong style="color:var(--accent-gold);font-size:0.71rem;text-transform:uppercase;letter-spacing:0.04em;">Study Note (${commentaryData.sourceName}):</strong>
+                   <div style="margin-top:0.15rem;">${vStudyNotes.join("<br><br>")}</div>
+                 </div>`
+              : "";
+
+            return `
+              ${headingHtml}
+              <div id="verse-block-${vObj.v}" class="bgw-verse-block ${isSel ? "selected-for-reflect" : ""}">
+                <button type="button" class="verse-reflect-trigger" onclick="window.selectVerseForReflection(${vObj.v}, true)">
+                  + Note
+                </button>
+                <span class="bgw-verse-text">
+                  ${hasNote ? '<span class="verse-has-note-dot" title="Saved note on this verse"></span>' : ""}
+                  <sup class="bgw-verse-sup" onclick="window.selectVerseForReflection(${vObj.v}, true)">${vObj.v}</sup>
+                  ${renderedTxt}
+                </span>
+                ${studyNoteHtml}
+              </div>
+            `;
+          })
+          .join("");
+      }
+    }
+
+    if (state.notesScope === "chapter") {
+      window.renderStudyLogs();
+    }
+  }
+
   // ==========================================================================
-  // RIGHT PANE: INSIGHTS & REFLECT (PERSONAL NOTES + SELF-BUILT TOPICS + LEXICON)
+  // RIGHT PANE: MINIMAL PERSONAL NOTES + 100% VERBATIM ORIGINAL LEXICON (BLB)
   // ==========================================================================
 
   window.switchReflectTab = function (tabKey) {
@@ -1189,22 +1369,30 @@
       ? `${state.currentBook} ${state.currentChapter}:${state.highlightedVerse}`
       : `${state.currentBook} ${state.currentChapter}`;
     const submitBtn = document.getElementById("save-note-submit-btn");
-    if (submitBtn) submitBtn.textContent = "💾 Save Reflection";
+    if (submitBtn) submitBtn.textContent = "Save Note";
     const cancelBtn = document.getElementById("cancel-edit-note-btn");
     if (cancelBtn) cancelBtn.style.display = "none";
   };
+
+  function getCombinedNoteBody(entry) {
+    const parts = [];
+    if (entry.christSubstance) parts.push(entry.christSubstance);
+    if (entry.firstMentionAndLexicon) parts.push(entry.firstMentionAndLexicon);
+    if (entry.rhemaLegislation) parts.push(entry.rhemaLegislation);
+    return parts.join("\n\n").trim();
+  }
 
   window.saveNewStudyLog = function (e) {
     if (e && e.preventDefault) e.preventDefault();
     const editId = (document.getElementById("log-edit-id").value || "").trim();
     const passage = (document.getElementById("log-passage-input").value || "").trim();
-    const title = (document.getElementById("log-title-input").value || "").trim();
-    const topicTag = (document.getElementById("log-topic-input").value || "").trim() || "Personal Study";
-    const christSubstance = (document.getElementById("log-christ-input").value || "").trim();
-    const firstMentionAndLexicon = (document.getElementById("log-lexicon-input").value || "").trim();
-    const rhemaLegislation = (document.getElementById("log-rhema-input").value || "").trim();
+    const rawTopic = (document.getElementById("log-topic-input").value || "").trim().replace(/^#+/, "");
+    const bodyText = (document.getElementById("log-body-input").value || "").trim();
 
-    if (!title || !passage || !christSubstance) return;
+    if (!passage || !bodyText) return;
+
+    const firstLine = bodyText.split("\n")[0].trim();
+    const autoTitle = firstLine.length > 64 ? firstLine.slice(0, 61) + "..." : firstLine;
 
     let savedEntry;
     if (editId) {
@@ -1212,11 +1400,11 @@
       if (idx !== -1) {
         savedEntry = Object.assign({}, state.studyLogs[idx], {
           passage,
-          title,
-          topicTag,
-          christSubstance,
-          firstMentionAndLexicon,
-          rhemaLegislation
+          title: autoTitle,
+          topicTag: rawTopic,
+          christSubstance: bodyText,
+          firstMentionAndLexicon: "",
+          rhemaLegislation: ""
         });
         state.studyLogs[idx] = savedEntry;
       }
@@ -1226,13 +1414,13 @@
       savedEntry = {
         id: "log-" + Date.now(),
         date: toLocalISOString(new Date()),
-        title,
+        title: autoTitle,
         passage,
-        topicTag,
-        ministerPattern: "Personal Study",
-        firstMentionAndLexicon,
-        christSubstance,
-        rhemaLegislation
+        topicTag: rawTopic,
+        ministerPattern: "",
+        firstMentionAndLexicon: "",
+        christSubstance: bodyText,
+        rhemaLegislation: ""
       };
       state.studyLogs.unshift(savedEntry);
     }
@@ -1241,7 +1429,6 @@
     window.resetNoteComposer();
     window.renderStudyLogs();
     renderBibleReader();
-    window.switchReflectTab("notes");
 
     if (window.RWH_CLOUD) {
       window.RWH_CLOUD.syncUpsertStudyLog(savedEntry);
@@ -1253,18 +1440,16 @@
     if (!entry) return;
     document.getElementById("log-edit-id").value = entry.id;
     document.getElementById("log-passage-input").value = entry.passage || "";
-    document.getElementById("log-title-input").value = entry.title || "";
     document.getElementById("log-topic-input").value = entry.topicTag || "";
-    document.getElementById("log-christ-input").value = entry.christSubstance || "";
-    document.getElementById("log-lexicon-input").value = entry.firstMentionAndLexicon || "";
-    document.getElementById("log-rhema-input").value = entry.rhemaLegislation || "";
+    document.getElementById("log-body-input").value = getCombinedNoteBody(entry);
 
     const submitBtn = document.getElementById("save-note-submit-btn");
-    if (submitBtn) submitBtn.textContent = "✓ Update Reflection";
+    if (submitBtn) submitBtn.textContent = "Update Note";
     const cancelBtn = document.getElementById("cancel-edit-note-btn");
     if (cancelBtn) cancelBtn.style.display = "inline-flex";
 
-    window.switchReflectTab("compose");
+    window.switchReflectTab("notes");
+    document.getElementById("log-body-input")?.focus();
   };
 
   window.deleteStudyLog = function (logId) {
@@ -1310,20 +1495,22 @@
     }
   };
 
-  // Build Topics Cloud & Autocomplete Datalist STRICTLY from what the user has studied themselves
   function renderPersonalStudiedTopics() {
     const cloudEl = document.getElementById("personal-topics-cloud");
     const datalistEl = document.getElementById("user-studied-topics-datalist");
+    const filterArea = document.getElementById("notes-filter-area");
+
+    if (filterArea) {
+      filterArea.style.display = state.studyLogs.length > 0 ? "block" : "none";
+    }
 
     const topicCounts = {};
     state.studyLogs.forEach((item) => {
       const raw = (item.topicTag || "").trim();
-      if (!raw) return;
+      if (!raw || raw === "Personal Study") return;
       raw.split(",").forEach((part) => {
-        const clean = part.trim();
-        if (clean) {
-          topicCounts[clean] = (topicCounts[clean] || 0) + 1;
-        }
+        const clean = part.trim().replace(/^#+/, "");
+        if (clean) topicCounts[clean] = (topicCounts[clean] || 0) + 1;
       });
     });
 
@@ -1334,17 +1521,13 @@
     }
 
     if (cloudEl) {
-      if (uniqueTopics.length === 0) {
-        cloudEl.innerHTML = "";
-      } else {
-        cloudEl.innerHTML = uniqueTopics
-          .map((t) => {
-            const isAct = state.activeTopicFilter === t;
-            const safeT = t.replace(/'/g, "\\'");
-            return `<span class="user-topic-chip ${isAct ? "active" : ""}" onclick="window.togglePersonalTopicFilter('${safeT}')">#${t} (${topicCounts[t]})</span>`;
-          })
-          .join("");
-      }
+      cloudEl.innerHTML = uniqueTopics
+        .map((t) => {
+          const isAct = state.activeTopicFilter === t;
+          const safeT = t.replace(/'/g, "\\'");
+          return `<span class="user-topic-chip ${isAct ? "active" : ""}" onclick="window.togglePersonalTopicFilter('${safeT}')">#${t}</span>`;
+        })
+        .join("");
     }
   }
 
@@ -1357,88 +1540,60 @@
     if (!listEl) return;
 
     const q = (document.getElementById("notes-search-input")?.value || "").trim().toLowerCase();
-    const bookLower = state.currentBook.toLowerCase();
     const chapterPrefix = `${state.currentBook} ${state.currentChapter}`.toLowerCase();
 
     const filtered = state.studyLogs.filter((item) => {
       const pLower = (item.passage || "").toLowerCase();
-      if (state.notesScope === "book" && !pLower.includes(bookLower)) return false;
       if (state.notesScope === "chapter" && !pLower.includes(chapterPrefix)) return false;
 
       if (state.activeTopicFilter) {
         const tags = (item.topicTag || "")
           .split(",")
-          .map((s) => s.trim().toLowerCase());
+          .map((s) => s.trim().replace(/^#+/, "").toLowerCase());
         if (!tags.includes(state.activeTopicFilter.toLowerCase())) return false;
       }
 
       if (q) {
         return (
-          (item.title || "").toLowerCase().includes(q) ||
           pLower.includes(q) ||
           (item.topicTag || "").toLowerCase().includes(q) ||
-          (item.christSubstance || "").toLowerCase().includes(q) ||
-          (item.firstMentionAndLexicon || "").toLowerCase().includes(q) ||
-          (item.rhemaLegislation || "").toLowerCase().includes(q)
+          getCombinedNoteBody(item).toLowerCase().includes(q)
         );
       }
       return true;
     });
 
     if (filtered.length === 0) {
-      listEl.innerHTML = `
-        <div class="loading-box" style="padding:1.6rem 1rem;">
-          ${
-            state.studyLogs.length === 0
-              ? "Your study notebook is clean and ready. Click any verse or open <strong>✍️ Reflect</strong> to log your own insights and build your personal topic library."
-              : "No notes match the current filter."
-          }
-        </div>
-      `;
+      listEl.innerHTML =
+        state.studyLogs.length === 0
+          ? `<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:1rem 0.5rem;">No notes yet. Click any verse or write above to save your reflections.</div>`
+          : `<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:1rem 0.5rem;">No matching notes found.</div>`;
       return;
     }
 
     listEl.innerHTML = filtered
       .map((entry) => {
         const safePassage = (entry.passage || "").replace(/'/g, "\\'");
+        const cleanTopic = (entry.topicTag || "").replace(/^#+/, "");
+        const showTopic = cleanTopic && cleanTopic !== "Personal Study";
+
         return `
           <div class="note-card">
             <div class="note-card-top">
-              <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
-                <span class="note-passage-pill" onclick="window.jumpToLoggedPassage('${safePassage}')" title="Jump to ${entry.passage}">
+              <div style="display:flex;align-items:center;gap:0.38rem;flex-wrap:wrap;">
+                <span class="note-passage-pill" onclick="window.jumpToLoggedPassage('${safePassage}')" title="Go to ${entry.passage}">
                   ${entry.passage}
                 </span>
-                ${
-                  entry.topicTag
-                    ? `<span style="font-size:0.7rem;font-weight:700;color:var(--text-muted);">#${entry.topicTag}</span>`
-                    : ""
-                }
+                ${showTopic ? `<span style="font-size:0.71rem;font-weight:700;color:var(--text-muted);">#${cleanTopic}</span>` : ""}
               </div>
-              <span style="font-size:0.69rem;color:var(--text-muted);font-family:var(--font-mono);">${entry.date}</span>
+              <span style="font-size:0.68rem;color:var(--text-muted);font-family:var(--font-mono);">${entry.date}</span>
             </div>
 
-            <div class="note-title">${entry.title}</div>
-            <div class="note-body-text">${entry.christSubstance || ""}</div>
+            <div class="note-body-text">${getCombinedNoteBody(entry)}</div>
 
-            ${
-              entry.firstMentionAndLexicon
-                ? `<div style="margin-top:0.5rem;padding-top:0.45rem;border-top:1px dashed var(--border-line);font-size:0.78rem;color:var(--text-muted);">
-                     <strong style="color:var(--accent-lexicon);">Word / Cross-Ref:</strong> ${entry.firstMentionAndLexicon}
-                   </div>`
-                : ""
-            }
-
-            ${
-              entry.rhemaLegislation
-                ? `<div style="margin-top:0.45rem;padding:0.45rem 0.6rem;background:var(--bg-subtle);border-radius:6px;font-size:0.78rem;font-style:italic;color:var(--text-ink);">
-                     "${entry.rhemaLegislation}"
-                   </div>`
-                : ""
-            }
-
-            <div style="display:flex;justify-content:flex-end;gap:0.4rem;margin-top:0.6rem;">
-              <button type="button" class="btn-secondary" style="padding:0.22rem 0.52rem;font-size:0.71rem;" onclick="window.editStudyLog('${entry.id}')">Edit</button>
-              <button type="button" class="btn-secondary" style="padding:0.22rem 0.52rem;font-size:0.71rem;" onclick="window.deleteStudyLog('${entry.id}')">Delete</button>
+            <div style="display:flex;justify-content:flex-end;gap:0.35rem;margin-top:0.5rem;">
+              <button type="button" class="btn-secondary" style="padding:0.18rem 0.48rem;font-size:0.7rem;" onclick="window.editStudyLog('${entry.id}')">Edit</button>
+              <button type="button" class="btn-secondary" style="padding:0.18rem 0.48rem;font-size:0.7rem;" onclick="window.deleteStudyLog('${entry.id}')">Delete</button>
             </div>
           </div>
         `;
@@ -1449,7 +1604,7 @@
   window.exportAllStudyData = function () {
     const payload = {
       exportedAt: new Date().toISOString(),
-      app: "Remnant Word Hub",
+      app: "Msimang Bible Reading",
       startDateISO: state.startDateISO,
       readChaptersCount: Object.keys(state.readChapters).length,
       readChapters: state.readChapters,
@@ -1459,24 +1614,35 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `remnant-word-hub-backup-${toLocalISOString(new Date())}.json`;
+    a.download = `msimang-bible-reading-backup-${toLocalISOString(new Date())}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   // ==========================================================================
-  // LIVE 14,000+ BLUE LETTER BIBLE STRONG'S LEXICON (IN RIGHT SIDEBAR)
+  // 100% VERBATIM ORIGINAL LEXICON (BDB 1906 / THAYER'S 1889 + STRONG'S 1890)
   // ==========================================================================
 
+  // Convert internal Strong's links (<a href=S:G3004>G3004</a>) into clickable lexicon buttons
+  function formatOriginalLexiconHtml(rawHtml) {
+    if (!rawHtml) return "";
+    return rawHtml
+      .replace(/<a[^>]*href=["']?S:([HG]\d+)["']?[^>]*>(.*?)<\/a>/gi, function (_, sCode, inner) {
+        const upper = sCode.toUpperCase();
+        return `<span class="strongs-token" style="vertical-align:baseline;" onclick="window.inspectStrongs('${upper}', false)">${inner || upper} (${upper})</span>`;
+      })
+      .replace(/<a[^>]*>(.*?)<\/a>/gi, "$1");
+  }
+
   window.sendActiveLexiconToReflection = function () {
-    if (!state.activeLexiconSummary) return;
-    const lexBox = document.getElementById("log-lexicon-input");
-    if (lexBox) {
-      const prefix = lexBox.value ? lexBox.value.trim() + "\n" : "";
-      lexBox.value = prefix + state.activeLexiconSummary;
+    if (!state.activeLexiconPlainSummary) return;
+    const bodyBox = document.getElementById("log-body-input");
+    if (bodyBox) {
+      const prefix = bodyBox.value ? bodyBox.value.trim() + "\n\n" : "";
+      bodyBox.value = prefix + state.activeLexiconPlainSummary;
     }
-    window.switchReflectTab("compose");
-    lexBox?.focus();
+    window.switchReflectTab("notes");
+    bodyBox?.focus();
   };
 
   window.inspectStrongs = async function (code, focusRightPane = false) {
@@ -1501,47 +1667,42 @@
   };
 
   window.searchStrongsConcordance = function (query) {
-    const q = (query || "").trim().toLowerCase();
+    const q = (query || "").trim();
     const resultsEl = document.getElementById("concordance-search-results");
     if (!resultsEl) return;
 
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
     if (!q) {
       resultsEl.innerHTML = "";
       return;
     }
 
-    let directHtml = "";
-    if (/^[hg]\d{1,4}$/i.test(q)) {
-      const upper = q.toUpperCase();
-      directHtml = `
-        <div onclick="window.inspectStrongs('${upper}')" style="padding:0.45rem 0.65rem;background:var(--accent-primary-soft);border:1px solid var(--accent-primary);border-radius:7px;margin-top:0.35rem;cursor:pointer;display:flex;justify-content:space-between;font-size:0.8rem;">
-          <span>Lookup Strong's <strong>${upper}</strong></span>
-          <span style="font-weight:700;color:var(--accent-primary);">Open →</span>
-        </div>
-      `;
-    }
-
-    const matches = Object.values(window.STRONGS_LEXICON || {}).filter((item) => {
-      return (
-        item.number.toLowerCase().includes(q) ||
-        item.translit.toLowerCase().includes(q) ||
-        item.original.toLowerCase().includes(q) ||
-        item.definition.toLowerCase().includes(q)
-      );
-    });
-
-    resultsEl.innerHTML =
-      directHtml +
-      matches
-        .map(
-          (m) => `
-          <div onclick="window.inspectStrongs('${m.number}')" style="padding:0.45rem 0.65rem;background:var(--bg-paper);border:1px solid var(--border-line);border-radius:7px;margin-top:0.3rem;cursor:pointer;display:flex;justify-content:space-between;font-size:0.8rem;">
-            <span><strong style="color:var(--accent-lexicon);font-family:var(--font-mono);">${m.number}</strong> · ${m.original} (<em>${m.translit}</em>)</span>
-            <span style="color:var(--accent-primary);font-weight:700;">→</span>
-          </div>
-        `
-        )
-        .join("");
+    searchDebounceTimer = setTimeout(async function () {
+      resultsEl.innerHTML = `<div style="font-size:0.75rem;color:var(--text-muted);padding:0.35rem 0;">Searching original BDB / Thayer's lexicon...</div>`;
+      try {
+        const resp = await fetch(
+          `https://bolls.life/dictionary-definition/BDBT/${encodeURIComponent(q)}/`
+        );
+        const arr = await resp.json();
+        if (!Array.isArray(arr) || arr.length === 0) {
+          resultsEl.innerHTML = `<div style="font-size:0.75rem;color:var(--text-muted);padding:0.35rem 0;">No entries found for "${q}".</div>`;
+          return;
+        }
+        resultsEl.innerHTML = arr
+          .slice(0, 12)
+          .map(
+            (item) => `
+              <div onclick="window.inspectStrongs('${item.topic}'); document.getElementById('concordance-search-results').innerHTML='';" style="padding:0.42rem 0.65rem;background:var(--bg-paper);border:1px solid var(--border-line);border-radius:7px;margin-top:0.28rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:0.79rem;">
+                <span><strong style="color:var(--accent-lexicon);font-family:var(--font-mono);">${item.topic}</strong> · ${item.lexeme || ""} (<em>${item.transliteration || ""}</em>) — ${item.short_definition || ""}</span>
+                <span style="color:var(--accent-primary);font-weight:700;">→</span>
+              </div>
+            `
+          )
+          .join("");
+      } catch (e) {
+        resultsEl.innerHTML = "";
+      }
+    }, 260);
   };
 
   async function renderConcordanceInspector() {
@@ -1549,114 +1710,96 @@
     if (!panel) return;
 
     const code = state.activeStrongsCode || "G3056";
-    const curated = window.STRONGS_LEXICON && window.STRONGS_LEXICON[code];
-
-    if (curated) {
-      state.activeLexiconSummary = `${curated.number} ${curated.original} (${curated.translit}): ${curated.definition}`;
-      panel.innerHTML = `
-        <div class="lex-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
-            <div>
-              <span class="strongs-token" style="vertical-align:baseline;margin:0;">${curated.number} • ${curated.lang}</span>
-              <div style="font-family:var(--font-scripture);font-size:1.5rem;font-weight:700;color:var(--text-ink);margin-top:0.15rem;">
-                ${curated.original}
-              </div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-weight:700;font-size:0.9rem;">${curated.translit}</div>
-              <div style="font-size:0.73rem;color:var(--text-muted);">/${curated.pronunciation}/</div>
-              <div style="font-size:0.7rem;color:var(--accent-gold);font-weight:700;">${curated.partOfSpeech}</div>
-            </div>
-          </div>
-
-          <button type="button" class="btn-crimson" style="width:100%;padding:0.45rem;font-size:0.76rem;" onclick="window.sendActiveLexiconToReflection()">
-            + Add ${curated.number} (${curated.translit}) to My Reflection
-          </button>
-        </div>
-
-        <div class="lex-card">
-          <div class="lex-card-title">Strong's Definition</div>
-          <div class="lex-card-body">${curated.definition}</div>
-        </div>
-
-        <div class="lex-card">
-          <div class="lex-card-title">Thayer's / BDB Usage Outline</div>
-          <div class="lex-card-body">
-            <ul>${curated.blbOutline.map((line) => `<li>${line}</li>`).join("")}</ul>
-          </div>
-        </div>
-
-        <div class="lex-card">
-          <div class="lex-card-title">Law of First Mention</div>
-          <div class="lex-card-body">${curated.firstMention}</div>
-        </div>
-
-        <div class="lex-card" style="margin-bottom:0;">
-          <div class="lex-card-title">Key Cross-References</div>
-          <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.25rem;">
-            ${curated.keyRefs
-              .map(
-                (ref) =>
-                  `<span class="note-passage-pill" onclick="window.jumpToLoggedPassage('${ref}')">${ref}</span>`
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
+    if (lexiconCache[code]) {
+      drawVerbatimLexiconPanel(panel, code, lexiconCache[code]);
       return;
     }
 
-    if (strongsApiCache[code]) {
-      renderLiveStrongsEntry(panel, code, strongsApiCache[code]);
-      return;
-    }
+    panel.innerHTML = `<div class="loading-box">Loading original lexicon sources for <strong>${code}</strong>...</div>`;
 
-    panel.innerHTML = `<div class="loading-box">Loading lexicon for <strong>${code}</strong>...</div>`;
     try {
-      const resp = await fetch(`https://bolls.life/dictionary-definition/BDBT/${encodeURIComponent(code)}/`);
-      const arr = await resp.json();
-      if (Array.isArray(arr) && arr.length > 0) {
-        strongsApiCache[code] = arr[0];
-        if (state.activeStrongsCode === code) {
-          renderLiveStrongsEntry(panel, code, arr[0]);
-        }
-      } else {
+      // Fetch BOTH verbatim scholarly sources used by Blue Letter Bible:
+      // 1. BDBT: Brown-Driver-Briggs Hebrew Lexicon (1906) / Thayer's Greek-English Lexicon (1889)
+      // 2. SECE: Strong's Exhaustive Concordance of the Bible (James Strong, 1890)
+      const [bdbtResp, seceResp] = await Promise.all([
+        fetch(`https://bolls.life/dictionary-definition/BDBT/${encodeURIComponent(code)}/`),
+        fetch(`https://bolls.life/dictionary-definition/SECE/${encodeURIComponent(code)}/`)
+      ]);
+
+      const bdbtArr = bdbtResp.ok ? await bdbtResp.json() : [];
+      const seceArr = seceResp.ok ? await seceResp.json() : [];
+
+      const entryData = {
+        bdbt: Array.isArray(bdbtArr) && bdbtArr.length > 0 ? bdbtArr[0] : null,
+        sece: Array.isArray(seceArr) && seceArr.length > 0 ? seceArr[0] : null
+      };
+
+      if (!entryData.bdbt && !entryData.sece) {
         panel.innerHTML = `<div class="lex-card">No lexicon entry found for <strong>${code}</strong>.</div>`;
+        return;
+      }
+
+      lexiconCache[code] = entryData;
+      if (state.activeStrongsCode === code) {
+        drawVerbatimLexiconPanel(panel, code, entryData);
       }
     } catch (e) {
-      panel.innerHTML = `<div class="lex-card">Connect to the internet to load live lexicon for <strong>${code}</strong>.</div>`;
+      panel.innerHTML = `<div class="lex-card">Connect to the internet to load original BDB / Thayer's / Strong's lexicon for <strong>${code}</strong>.</div>`;
     }
   }
 
-  function renderLiveStrongsEntry(panel, code, apiObj) {
-    const lang = code.startsWith("H") ? "Hebrew (BDB)" : "Greek (Thayer's)";
-    const plainDef = cleanHtmlTags(apiObj.definition || "").slice(0, 220);
-    state.activeLexiconSummary = `${code} ${apiObj.lexeme || ""} (${apiObj.transliteration || ""}): ${plainDef}...`;
+  function drawVerbatimLexiconPanel(panel, code, entryData) {
+    const primary = entryData.bdbt || entryData.sece;
+    const isHebrew = code.startsWith("H");
+    const primarySourceTitle = isHebrew
+      ? "Brown-Driver-Briggs Hebrew & English Lexicon (BDB, 1906)"
+      : "Thayer's Greek-English Lexicon of the New Testament (1889)";
+
+    const lexeme = primary.lexeme || code;
+    const translit = primary.transliteration || "";
+    const pronun = primary.pronunciation || "";
+    const shortDef = primary.short_definition || "";
+
+    state.activeLexiconPlainSummary = `[${code}] ${lexeme} (${translit}, /${pronun}/) — "${shortDef}" (${isHebrew ? "BDB" : "Thayer's"} / Strong's)`;
 
     panel.innerHTML = `
       <div class="lex-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <div>
-            <span class="strongs-token" style="vertical-align:baseline;margin:0;">${code} • ${lang}</span>
-            <div style="font-family:var(--font-scripture);font-size:1.35rem;font-weight:700;color:var(--text-ink);margin-top:0.15rem;">
-              ${apiObj.lexeme || code}
+            <span class="strongs-token" style="vertical-align:baseline;margin:0;">${code} · ${isHebrew ? "Hebrew / Aramaic" : "New Testament Greek"}</span>
+            <div style="font-family:var(--font-scripture);font-size:1.55rem;font-weight:700;color:var(--text-ink);margin-top:0.15rem;">
+              ${lexeme}
             </div>
           </div>
           <div style="text-align:right;">
-            <div style="font-weight:700;font-size:0.88rem;">${apiObj.transliteration || ""}</div>
-            <div style="font-size:0.73rem;color:var(--text-muted);">${apiObj.pronunciation || ""}</div>
+            <div style="font-weight:700;font-size:0.9rem;">${translit}</div>
+            ${pronun ? `<div style="font-size:0.74rem;color:var(--text-muted);">/${pronun}/</div>` : ""}
+            ${shortDef ? `<div style="font-size:0.72rem;color:var(--accent-gold);font-weight:700;">"${shortDef}"</div>` : ""}
           </div>
         </div>
 
-        <button type="button" class="btn-crimson" style="width:100%;padding:0.45rem;font-size:0.76rem;" onclick="window.sendActiveLexiconToReflection()">
-          + Add ${code} to My Reflection
+        <button type="button" class="btn-crimson" style="width:100%;padding:0.44rem;font-size:0.76rem;" onclick="window.sendActiveLexiconToReflection()">
+          + Insert ${code} (${translit}) into Note
         </button>
       </div>
 
-      <div class="lex-card" style="margin-bottom:0;">
-        <div class="lex-card-title">Complete Lexicon Definition</div>
-        <div class="lex-card-body">${apiObj.definition || ""}</div>
-      </div>
+      ${
+        entryData.bdbt
+          ? `<div class="lex-card">
+               <div class="lex-card-title">${primarySourceTitle} (Verbatim BLB Source)</div>
+               <div class="lex-card-body">${formatOriginalLexiconHtml(entryData.bdbt.definition)}</div>
+             </div>`
+          : ""
+      }
+
+      ${
+        entryData.sece
+          ? `<div class="lex-card" style="margin-bottom:0;">
+               <div class="lex-card-title">Strong's Exhaustive Concordance (James Strong, 1890)</div>
+               <div class="lex-card-body">${formatOriginalLexiconHtml(entryData.sece.definition)}</div>
+             </div>`
+          : ""
+      }
     `;
   }
 
@@ -1707,7 +1850,7 @@
     }
   };
 
-  // Boot Workspace
+  // Boot Application
   document.addEventListener("DOMContentLoaded", function () {
     loadState();
     renderAllTrackerViews();

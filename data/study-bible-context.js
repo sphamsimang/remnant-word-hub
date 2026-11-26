@@ -1072,13 +1072,284 @@ window.CHAPTER_GEO_OVERRIDES = {
   }
 };
 
+// Original Recipients (Who It Was Written To) & Historical/Cultural Context of the Times for all 66 Books
+window.BOOK_AUDIENCE_AND_TIMES = {
+  "Genesis": {
+    writtenTo: "The redeemed nation of Israel encamped in the wilderness between Egypt and Canaan",
+    timesContext: "Israel had spent over 400 years immersed in polytheistic Egyptian mythology where pharaohs, the Nile, and sun gods were worshiped. Moses wrote Genesis so Israel would understand the one true Creator God, human dignity, the origin of sin and nations, and God's land covenant with Abraham, Isaac, and Jacob."
+  },
+  "Exodus": {
+    writtenTo: "The freed Israelites at Sinai and future generations of covenant Israel",
+    timesContext: "Set during Egypt's powerful New Kingdom imperial era, when Hebrew descendants were forced into brick-making slavery. Each of the Ten Plagues directly judged major Egyptian deities, culminating in the Passover deliverance and the covenant treaty at Mount Sinai."
+  },
+  "Leviticus": {
+    writtenTo: "The Levitical priests (sons of Aaron) and the twelve tribes of Israel at Mount Sinai",
+    timesContext: "Unlike pagan temples in Egypt and Canaan that practiced fertility rituals, magic, and human sacrifice, Leviticus established strict moral purity, blood atonement for sin, sanitary laws, and Sabbath/Jubilee justice for how a holy God dwelt in Israel's camp."
+  },
+  "Numbers": {
+    writtenTo: "The second generation of Israelites poised on the Plains of Moab to enter Canaan",
+    timesContext: "Covers 38 years of nomadic desert life in the Sinai and Negev wildernesses. Explains why the first Exodus generation died in the desert through fear and rebellion at Kadesh-Barnea, while reassuring the new generation of God's faithfulness."
+  },
+  "Deuteronomy": {
+    writtenTo: "The new generation of Israel gathered east of the Jordan River just before Moses' death",
+    timesContext: "Structured in the exact form of an Ancient Near Eastern suzerain-vassal covenant treaty (preamble, historical prologue, stipulations, blessings/curses, witnesses), calling Israel to wholehearted loyalty to Yahweh rather than Canaanite Baal worship."
+  },
+  "Joshua": {
+    writtenTo: "The tribes of Israel settling in the land of Canaan",
+    timesContext: "Late Bronze Age Canaan consisted of fortified, independent city-states ruled by local kings practicing child sacrifice and temple prostitution. Joshua records how Yahweh fought for Israel to establish their tribal inheritances."
+  },
+  "Judges": {
+    writtenTo: "Israel during the early monarchy (looking back at the anarchy before Israel had a godly king)",
+    timesContext: "During the Iron Age I transition (~1350–1050 BC), Israel lived as a loose confederation of twelve tribes surrounded by Philistines, Moabites, Midianites, and Canaanites, repeatedly compromising with local idols whenever a generation forgot the Lord."
+  },
+  "Ruth": {
+    writtenTo: "Israelites during the reign of King David (explaining David's faithful family lineage)",
+    timesContext: "Set during the turbulent era of the Judges amid famine in Judea. Highlights ancient Israelite agricultural gleaning laws for the poor/foreigners (Lev 19:9-10) and the 'Goel' (kinsman-redeemer) family-redemption custom at the city gate."
+  },
+  "1 Samuel": {
+    writtenTo: "The citizens of Israel explaining the transition from tribal judges to the Davidic monarchy",
+    timesContext: "Iron-monopolizing Philistine city-states threatened Israel's survival (1 Sam 13:19), prompting elders to demand a king 'like all the nations'—contrasting Saul's Tall-Warrior kingship with David's shepherd-hearted reliance on God."
+  },
+  "2 Samuel": {
+    writtenTo: "The united nation of Israel and royal court of Judah",
+    timesContext: "With major empires (Egypt and Assyria) temporarily weakened around 1000 BC, King David unified the northern and southern tribes, captured the neutral Jebusite fortress of Jerusalem as capital, and received God's eternal royal covenant."
+  },
+  "1 Kings": {
+    writtenTo: "Judahite exiles in Babylon asking why the glorious kingdom and Temple had fallen",
+    timesContext: "Traces Israel from Solomon's international trade empire and First Temple (966 BC) to the 930 BC civil split into Israel (North) and Judah (South), when royal political marriages introduced Phoenician Baal worship under Ahab and Jezebel."
+  },
+  "2 Kings": {
+    writtenTo: "Jewish captives in Babylonian exile",
+    timesContext: "Dominated by the rise of two ruthless Mesopotamian superpowers: the Neo-Assyrian Empire (which deported Northern Israel in 722 BC) and the Neo-Babylonian Empire under Nebuchadnezzar (which burned Jerusalem and the Temple in 586 BC due to persistent covenant unfaithfulness)."
+  },
+  "1 Chronicles": {
+    writtenTo: "The Jewish remnant who returned to Judea from Babylonian captivity",
+    timesContext: "Living as a small, vulnerable province under Persian rule without a king on the throne, returned exiles wondered if God's promises still stood. Ezra traced their unbroken genealogy from Adam and highlighted David's priestly Temple blueprint."
+  },
+  "2 Chronicles": {
+    writtenTo: "The post-exilic community rebuilding worship around the Second Temple in Jerusalem",
+    timesContext: "Evaluates every king of Judah by one standard: whether they sought the Lord and honored His Temple, showing the returned exiles how national spiritual renewal always follows humble repentance and prayer (2 Chr 7:14)."
+  },
+  "Ezra": {
+    writtenTo: "The restored Jewish community in Jerusalem and Yehud (Persian province of Judea)",
+    timesContext: "In 539 BC, Cyrus the Great of Persia conquered Babylon and reversed Assyrian/Babylonian deportation policies, funding exiled peoples to return home and rebuild temples—leading to Zerubbabel's Temple reconstruction (516 BC) and Ezra's Torah reforms (458 BC)."
+  },
+  "Nehemiah": {
+    writtenTo: "Post-exilic Jews living in and around Jerusalem under the Persian Empire",
+    timesContext: "Nearly a century after the first exiles returned, Jerusalem's walls still lay in rubble, leaving residents exposed to hostile neighboring governors (Sanballat of Samaria, Tobiah of Ammon, Geshem the Arab). Nehemiah served as royal cupbearer to Persian King Artaxerxes I."
+  },
+  "Esther": {
+    writtenTo: "Jewish communities scattered across the Persian Empire (and in Judea) celebrating Purim",
+    timesContext: "Set during the reign of Persian Emperor Xerxes I (Ahasuerus, 486–465 BC) inside the winter capital of Susa. Illustrates God's quiet, sovereign preservation of Jews who remained in the Diaspora amid imperial court intrigue."
+  },
+  "Job": {
+    writtenTo: "God's covenant people wrestling with why righteous people suffer",
+    timesContext: "Reflects the ancient Patriarchal era (~2000 BC) outside Israel in Uz (Edom/northern Arabia), where wealth was measured in livestock, longevity spanned centuries, and family patriarchs offered sacrifices directly for their households."
+  },
+  "Psalms": {
+    writtenTo: "Worshiping Israel at the Tabernacle/Temple and believers in every generation",
+    timesContext: "Compiled over 1,000 years (from Moses to the post-exilic Second Temple choir guilds) as ancient Israel's sung prayerbook for royal coronations, pilgrim festivals ascending to Jerusalem, military crises, personal grief, and thanksgiving."
+  },
+  "Proverbs": {
+    writtenTo: "Young men, royal heirs, and all covenant people seeking godly wisdom for daily life",
+    timesContext: "Composed during Israel's monarchy when international wisdom literature flourished across Egypt and the Near East—grounding true practical skill ('Chokmah') not in human cleverness, but in the reverent fear of Yahweh."
+  },
+  "Ecclesiastes": {
+    writtenTo: "Israelites and seekers tempted to look for ultimate meaning in wealth, status, or earthly accomplishments",
+    timesContext: "Reflects Jerusalem's cosmopolitan court under Solomon, when unprecedented gold, building projects, gardens, and philosophical inquiry proved hollow ('hevel' — vapor/breath) apart from fearing God."
+  },
+  "Song of Solomon": {
+    writtenTo: "Covenant Israel celebrating God's gift of faithful marital love and devotion",
+    timesContext: "Uses rich ancient Near Eastern wedding poetry, pastoral imagery of Judean vineyards, spices, and royal processions from Solomon's era to honor covenantal love and fidelity."
+  },
+  "Isaiah": {
+    writtenTo: "The Kingdom of Judah in Jerusalem (and prophetically to future exiles in Babylon)",
+    timesContext: "Isaiah ministered (740–680 BC) during the terrifying expansion of the Assyrian Empire—watching Samaria fall in 722 BC and Sennacherib besiege Hezekiah's Jerusalem in 701 BC—calling Judah to trust God rather than foreign political alliances."
+  },
+  "Jeremiah": {
+    writtenTo: "The citizens, kings, and false prophets of Judah during Jerusalem's final 40 years before 586 BC",
+    timesContext: "As Assyria collapsed and Babylon rose after the Battle of Carchemish (605 BC), Judah's leaders trusted superstitiously in the physical Temple building while practicing idolatry and injustice, ignoring Jeremiah's warnings until Babylon breached the walls."
+  },
+  "Lamentations": {
+    writtenTo: "Traumatized survivors of Jerusalem's 586 BC destruction and exiles mourning in Babylon",
+    timesContext: "Written amid famine, burned gates, and the demolished Temple right after Nebuchadnezzar's siege, using structured Hebrew alphabet acrostic poems to give voice to grief while anchoring hope in God's unfailing mercies."
+  },
+  "Ezekiel": {
+    writtenTo: "Jewish captives already deported to Tel-Abib by the Kebar Canal in Babylon (597 BC wave)",
+    timesContext: "Deported priests and elders in Babylon falsely believed Jerusalem would never fall and they would quickly return home. Ezekiel used dramatic street-theater sign-acts and visions of God's mobile throne-chariot to show God was not trapped in Judea."
+  },
+  "Daniel": {
+    writtenTo: "Jewish exiles living under pagan world empires (Babylonian and Medo-Persian)",
+    timesContext: "Taken to Babylon in 605 BC to be re-educated in Chaldean language and statecraft, Daniel and his friends navigated life as a faithful minority inside hostile imperial palaces under Nebuchadnezzar, Belshazzar, Darius, and Cyrus."
+  },
+  "Hosea": {
+    writtenTo: "The Northern Kingdom of Israel (Ephraim/Samaria) in its final prosperous yet decadent decades",
+    timesContext: "Under Jeroboam II (~750 BC), Northern Israel enjoyed economic boom alongside rampant Canaanite Baal fertility worship and political coups before Assyria conquered Samaria in 722 BC."
+  },
+  "Joel": {
+    writtenTo: "The priests, elders, and inhabitants of Judah and Jerusalem",
+    timesContext: "A catastrophic locust swarm stripped Judah's vines and grain—even halting daily grain and drink offerings at the Temple—serving as a wake-up call for national fasting and foreshadowing the 'Day of the LORD'."
+  },
+  "Amos": {
+    writtenTo: "The wealthy elite and religious shrines (Bethel) of the Northern Kingdom of Israel",
+    timesContext: "During peaceful borders and booming ivory-palace trade under Jeroboam II (~760 BC), wealthy landowners exploited poor farmers in corrupt courts while assuming lavish sacrifices at Bethel guaranteed God's favor."
+  },
+  "Obadiah": {
+    writtenTo: "Edom (judgment) and the afflicted people of Judah (comfort)",
+    timesContext: "Edomites (descendants of Jacob's twin brother Esau) lived in high red-rock cliffs south of the Dead Sea (Petra/Seir). When Babylon sacked Jerusalem in 586 BC, Edom betrayed brotherly ties by looting Jerusalem and capturing fleeing Judeans."
+  },
+  "Jonah": {
+    writtenTo: "Northern Israel (exposing narrow nationalistic pride versus God's compassion for repentant nations)",
+    timesContext: "Nineveh was the feared, notoriously brutal capital of the Assyrian Empire (~760 BC), making Jonah deeply reluctant to preach a message that might spare Israel's fiercest enemy."
+  },
+  "Micah": {
+    writtenTo: "Both Samaria (North) and Jerusalem (South), especially rural commoners oppressed by urban elites",
+    timesContext: "Ministering alongside Isaiah in rural Moresheth (Southwest Judah) as Assyrian armies devastated Judean towns, Micah exposed land-grabbing nobles, bribe-taking judges, and hireling prophets."
+  },
+  "Nahum": {
+    writtenTo: "Oppressed Judah (comforting them that Assyrian tyranny would soon end)",
+    timesContext: "Written around 650–620 BC when Assyria was at peak arrogance after sacking Thebes in Egypt (663 BC). Nahum foretold Nineveh's shockingly rapid fall by flood and fire—fulfilled in 612 BC by Babylonians and Medes."
+  },
+  "Habakkuk": {
+    writtenTo: "Faithful believers in Judah perplexed by domestic corruption and rising Babylonian brutality",
+    timesContext: "Written around 605 BC after godly King Josiah died and wicked Jehoiakim reigned in Jerusalem, right as Nebuchadnezzar's fierce Chaldean cavalry swept across the Fertile Crescent."
+  },
+  "Zephaniah": {
+    writtenTo: "Inhabitants of Jerusalem and Judah during the early reign of young King Josiah",
+    timesContext: "After 55 years of state-sponsored idolatry and astral worship under Manasseh and Amon, Jerusalem had grown spiritually apathetic—until Zephaniah's warnings helped ignite Josiah's sweeping reforms (622 BC)."
+  },
+  "Haggai": {
+    writtenTo: "Governor Zerubbabel, High Priest Joshua, and returned Jewish exiles in Jerusalem",
+    timesContext: "In 520 BC (second year of Persian King Darius I), returned exiles had left God's Temple an unfinished foundation for 16 years due to local opposition and inflation, focusing instead on paneling their own homes."
+  },
+  "Zechariah": {
+    writtenTo: "Discouraged post-exilic rebuilders of the Second Temple in Jerusalem",
+    timesContext: "Beginning two months after Haggai in late 520 BC under Persian rule, Zechariah encouraged the small, poor Judea colony that their modest Second Temple was directly tied to the future coming of Israel's Messianic King-Priest."
+  },
+  "Malachi": {
+    writtenTo: "Complacent priests and disillusioned Jewish citizens in Jerusalem (~100 years after the return)",
+    timesContext: "Around 430 BC during Persian rule (contemporary with Nehemiah's era), initial enthusiasm had faded into cynicism: priests offered blind/lame animals on the altar, men divorced covenant wives to marry pagan women, and tithes were withheld."
+  },
+  "Matthew": {
+    writtenTo: "Jewish-background Christians (and the wider Church across Syria and Judea)",
+    timesContext: "Written in first-century Greco-Roman Judea/Syria while Jewish synagogues and nascent Christian communities debated whether Jesus of Nazareth truly fulfilled the Hebrew Torah and Prophets under Roman occupation."
+  },
+  "Mark": {
+    writtenTo: "Gentile (especially Roman) Christians facing mounting imperial hostility and persecution",
+    timesContext: "Traditionally written from Rome (~AD 55–64, around Nero's era) recording Peter's eyewitness preaching. Mark explains Jewish customs and Aramaic phrases for Roman readers and emphasizes Jesus' authority and suffering servanthood."
+  },
+  "Luke": {
+    writtenTo: "Theophilus (likely a high-ranking Gentile patron/official) and educated Greek-speaking readers",
+    timesContext: "Written in polished classical Greek historiography during the Pax Romana (~AD 60), situating Jesus' birth and ministry precisely under Roman emperors (Augustus, Tiberius) and governors (Quirinius, Pilate) for all nations."
+  },
+  "John": {
+    writtenTo: "Second-generation Christians (Jews and Gentiles across Asia Minor/Ephesus) and seekers",
+    timesContext: "Written late in the first century (~AD 85–90) from Ephesus after the AD 70 destruction of Jerusalem's Temple, addressing both synagogue tensions and early Greek philosophical/proto-Gnostic doubts about Jesus' full deity and humanity."
+  },
+  "Acts": {
+    writtenTo: "Theophilus and Gentile/Jewish believers across the Roman Empire",
+    timesContext: "Follows the early Church across Roman roads and Mediterranean shipping lanes (AD 30–62), showing Roman officials repeatedly finding Christians politically innocent while the Gospel crossed from Jewish Jerusalem to Gentile Rome."
+  },
+  "Romans": {
+    writtenTo: "House churches of Jewish and Gentile believers living in imperial Rome",
+    timesContext: "In AD 49, Emperor Claudius had expelled Jews from Rome; when Claudius died in AD 54 (under early Nero), Jewish Christians returned to churches now led mostly by Gentiles, creating cultural tension over the Mosaic Law that Paul resolved from Corinth in AD 57."
+  },
+  "1 Corinthians": {
+    writtenTo: "The gifted yet deeply divided urban church in Corinth, Greece",
+    timesContext: "Rebuilt as a booming Roman colony straddling two seaports, first-century Corinth was famous for wealth, rhetoric competitions, litigation, idol-meat banquets, and the temple of Aphrodite—all of which were bleeding into the young church."
+  },
+  "2 Corinthians": {
+    writtenTo: "The church at Corinth and believers throughout the Roman province of Achaia",
+    timesContext: "Written from Macedonia (~AD 55–56) after boastful 'super-apostles' infiltrated Corinth prizing Greek oratorical polish, letters of recommendation, and triumphalism while mocking Paul's physical sufferings and tentmaking."
+  },
+  "Galatians": {
+    writtenTo: "Gentile churches planted by Paul across Roman Galatia (Asia Minor / modern central Turkey)",
+    timesContext: "Shortly after Paul planted these churches (~AD 48–50), traveling Jewish-Christian teachers ('Judaizers') insisted Gentile converts had to undergo circumcision and keep Mosaic dietary/calendar laws to belong to God's people."
+  },
+  "Ephesians": {
+    writtenTo: "The church at Ephesus and surrounding congregations throughout Roman Asia Minor",
+    timesContext: "Ephesus was the fourth-largest city of the Roman Empire, home to the colossal Temple of Artemis (one of the Seven Wonders) and famous for magical scrolls and fear of cosmic spirits/astrology—which Paul answered by proclaiming Christ's supremacy over all powers."
+  },
+  "Philippians": {
+    writtenTo: "The saints, overseers (bishops), and deacons at Philippi in Macedonia",
+    timesContext: "Philippi was a proud Roman military colony ('little Rome') populated by retired legionaries who prized Roman citizenship and honor status. Writing in chains from Rome (~AD 61), Paul called them to humble unity as citizens of heaven (Phil 3:20)."
+  },
+  "Colossians": {
+    writtenTo: "Believers in Colossae and neighboring Laodicea in the Lycus Valley (Asia Minor)",
+    timesContext: "Colossae was a multicultural trade town in Phrygia where local folk mysticism, Jewish festival/food rules, asceticism, and reverence for angelic intermediaries threatened to eclipse the all-sufficiency of Christ."
+  },
+  "1 Thessalonians": {
+    writtenTo: "New Gentile and Jewish converts in Thessalonica (capital of Roman Macedonia)",
+    timesContext: "Forced out of Thessalonica after just weeks by a mob accusing Christians of treason against Caesar ('saying there is another king, Jesus', Acts 17:7), Paul wrote from Corinth (~AD 51) to comfort persecuted believers grieving deceased loved ones."
+  },
+  "2 Thessalonians": {
+    writtenTo: "The persecuted church in Thessalonica",
+    timesContext: "Written months after 1 Thessalonians (~AD 51–52) when forged reports or prophetic confusion convinced some Thessalonians that the 'Day of the Lord' had already arrived, leading some to quit working and depend on wealthy patrons."
+  },
+  "1 Timothy": {
+    writtenTo: "Timothy, Paul's young delegate overseeing the house churches of Ephesus",
+    timesContext: "After Paul's first Roman release (~AD 63–65), speculative teachers in Ephesus were blending Jewish genealogical myths with harsh asceticism (forbidding marriage and certain foods), requiring clear church leadership standards."
+  },
+  "2 Timothy": {
+    writtenTo: "Timothy in Ephesus (Paul's final personal charge before martyrdom)",
+    timesContext: "After the Great Fire of Rome (AD 64), Emperor Nero launched brutal state persecution against Christians. Chained in a cold Roman dungeon (~AD 66–67) abandoned by many associates, Paul passed the baton of faithful Scripture ministry to Timothy."
+  },
+  "Titus": {
+    writtenTo: "Titus, Paul's Gentile co-worker organizing young churches across the island of Crete",
+    timesContext: "First-century Cretan port cities had a notorious cultural reputation in the Mediterranean world for dishonesty, greed, and lack of self-control, making godly elders and visible good works vital for Gospel credibility."
+  },
+  "Philemon": {
+    writtenTo: "Philemon (a wealthy Christian homeowner in Colossae), Apphia, Archippus, and the church in his house",
+    timesContext: "In the Roman Empire, enslaved people made up ~30% of the population and runaway slaves faced severe punishment or death. Paul sent back Onesimus—now converted in Rome—appealing to Philemon to welcome him back as a beloved brother."
+  },
+  "Hebrews": {
+    writtenTo: "Jewish Christians facing social ostracism, property confiscation, and pressure to return to Judaism",
+    timesContext: "Written shortly before Rome destroyed Jerusalem and the Second Temple in AD 70. Under Roman law, Judaism was a legally protected religion ('religio licita'), tempting weary Jewish believers to retreat from persecuted Christianity back into Levitical sacrifices."
+  },
+  "James": {
+    writtenTo: "Jewish-Christian congregations ('the twelve tribes in the Dispersion') outside Judea",
+    timesContext: "Written in the AD 40s by James, leader of the Jerusalem church, when economic famine and rich landowning elites were oppressing poor Christian day-laborers in courts while some believers reduced 'faith' to empty verbal agreement."
+  },
+  "1 Peter": {
+    writtenTo: "Gentile and Jewish believers ('elect exiles') across five Roman provinces of northern Asia Minor",
+    timesContext: "Written from Rome (~AD 63–64) as Christians withdrawing from civic idol festivals and emperor-honor guilds faced slander, workplace boycotts, and escalating local hostility across Asia Minor."
+  },
+  "2 Peter": {
+    writtenTo: "Churches in Asia Minor (same wide readership as 1 Peter)",
+    timesContext: "Written shortly before Peter's execution under Nero (~AD 66–67), confronting antinomian false teachers who twisted Christian freedom to justify immorality while scoffing at the promise of Christ's return."
+  },
+  "1 John": {
+    writtenTo: "House churches around Ephesus in Roman Asia Minor",
+    timesContext: "Around AD 85–90, secessionist teachers influenced by early Docetic/Gnostic Greek dualism (claiming matter is evil and spirit is good) denied that the divine Son truly came in physical flesh and left the fellowship in arrogance."
+  },
+  "2 John": {
+    writtenTo: "'The elect lady and her children' (a local house-church congregation in Asia Minor)",
+    timesContext: "In the ancient Mediterranean world without hotels, traveling teachers relied on Christian home hospitality. John warned house-church hosts not to lodge or fund itinerant deceivers denying Christ's incarnation."
+  },
+  "3 John": {
+    writtenTo: "Gaius, a faithful and hospitable church leader in Asia Minor",
+    timesContext: "Addresses a local church leadership clash (~AD 90) where an ambitious local figure named Diotrephes refused to welcome traveling missionaries sent by the aged Apostle John."
+  },
+  "Jude": {
+    writtenTo: "Jewish-familiar Christian congregations threatened by itinerant false teachers",
+    timesContext: "Written in the AD 60s by Jude (brother of James and half-brother of Jesus), warning churches against smooth-talking infiltrators who claimed prophetic dreams to excuse sexual immorality and rebellion against authority."
+  },
+  "Revelation": {
+    writtenTo: "The Seven Churches in the Roman province of Asia (Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia, Laodicea)",
+    timesContext: "Written around AD 95 during Emperor Domitian's reign, when cities in Asia Minor aggressively promoted compulsory Caesar worship ('Domitian is Lord and God') through trade guilds and civic temples, forcing Christians to choose between economic survival/safety and exclusive loyalty to King Jesus."
+  }
+};
+
 // Helper to get Study Bible Context + Map Coordinates for ANY Book & Chapter
 window.getChapterStudyAndMapData = function (bookName, chapterNum) {
   const key = `${bookName}_${chapterNum}`;
   const bookProfile = window.BOOK_STUDY_PROFILES[bookName] || window.BOOK_STUDY_PROFILES["John"];
+  const audTimes = window.BOOK_AUDIENCE_AND_TIMES[bookName] || {
+    writtenTo: "God's covenant people and the Church",
+    timesContext: bookProfile.historicalSetting
+  };
   const override = window.CHAPTER_GEO_OVERRIDES[key];
 
-  // Dynamically pick location along the book's journey path based on chapter progress if no specific override
   let activeLocId = bookProfile.primaryLocation;
   if (override && override.locationId) {
     activeLocId = override.locationId;
@@ -1099,15 +1370,15 @@ window.getChapterStudyAndMapData = function (bookName, chapterNum) {
     bookName,
     chapterNum,
     author: bookProfile.author,
+    writtenTo: audTimes.writtenTo,
     dateWritten: bookProfile.dateWritten,
-    dispensation: bookProfile.dispensation,
-    historicalSetting: override ? override.studyContext : bookProfile.historicalSetting,
+    timesContext: audTimes.timesContext,
+    chapterSpecificOverride: override ? override.studyContext : null,
     bookOverview: bookProfile.historicalSetting,
     christocentricThread: bookProfile.christocentricThread,
-    apostolicKey: bookProfile.apostolicKey,
     mapCaption: override
       ? override.mapCaption
-      : `${bookName} ${chapterNum} Geographical Setting: ${primaryLoc.name} (${primaryLoc.modernRegion})`,
+      : `${bookName} ${chapterNum} Setting: ${primaryLoc.name} (${primaryLoc.modernRegion})`,
     activeLocation: primaryLoc,
     routeLocations
   };
